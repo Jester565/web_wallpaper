@@ -1,0 +1,5 @@
+node_modules
+db.json
+gauth.json
+*.png
+web_wallpaper/src/renderer/config/firebaseConfig.js

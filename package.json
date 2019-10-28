@@ -1,0 +1,22 @@
+{
+  "name": "wallpaper",
+  "version": "1.0.0",
+  "description": "Changes wallpaper to subreddit / photos",
+  "main": "main.js",
+  "dependencies": {
+    "lowdb": "^1.0.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "sharp": "^0.23.1",
+    "wallpaper": "^4.4.1"
+  },
+  "devDependencies": {
+    "electron": "^6.0.12"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
