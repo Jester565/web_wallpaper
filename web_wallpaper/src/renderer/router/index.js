@@ -1,19 +1,16 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import FireAuth from '../components/FireAuth.vue'
-import FireSuccess from '../components/FireSuccess.vue'
+import Loading from '../components/Loading'
+import LandingPage from '../components/LandingPage.vue'
+import Home from '../components/Home.vue'
 
 Vue.use(Router)
 
 export default new Router({
   routes: [
-    {
-      path: '/',
-      name: 'landing-page',
-      component: require('@/components/LandingPage').default
-    },
-    { path: '/fire_auth', component: FireAuth },
-    { path: '/fire_success', component: FireSuccess },
+    { path: '/', component: Loading },
+    { path: '/landing_page', component: LandingPage },
+    { path: '/home', component: Home },
     {
       path: '*',
       redirect: '/'

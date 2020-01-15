@@ -20,9 +20,9 @@ new Vue({
     firebase.initializeApp(config);
     firebase.auth().onAuthStateChanged((user) => {
       if(user) {
-        this.$router.push('/fire_success')
+        this.$router.push('/home')
       } else {
-        this.$router.push('/fire_auth')
+        this.$router.push('/landing_page')
       }
      });
     },

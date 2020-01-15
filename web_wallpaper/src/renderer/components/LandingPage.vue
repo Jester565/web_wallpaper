@@ -1,28 +1,103 @@
 <template>
-  <div class="md-layout back full" :class="`md-alignment-top-space-around`">
-    <div class="md-layout-item md-size-50 main-back">
-      <Auth />
+  <div>
+    <parallax fixed="true">
+      <img src="static/bg.jpg" alt="hello"> 
+    </parallax>
+    <div class="back">
+      <br />
+      <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+        <div class="md-layout-item md-size-50 center-text">
+          <span class="md-display-4">web_wall</span>
+        </div>
+      </div>
+      <br />
+      <br />
+      <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+        <div class="md-layout-item md-size-20 main-back">
+          <div id="firebaseui-auth-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="about-wrapper">
+      <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+        <div class="md-layout-item md-size-50 center-text">
+          <span class="md-display-1 about">About</span>  
+        </div>
+      </div>
+      <div class="about-desc">
+        <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+          <div class="md-layout-item md-size-50 center-text">
+            <span class="md-headline">Change your wallpaper every day to pictures from these sources</span>  
+          </div>
+        </div>
+        <br />
+        <md-tabs class="md-primary" md-alignment="centered" md-dynamic-height="true">
+          <md-tab id="tab-home" md-icon="static/reddit.svg" md-dynamic-height="true">
+            <RedditDesc />
+          </md-tab>
+          <md-tab id="tab-a" md-icon="static/gp.svg">
+            <GoogPhotosDesc />
+          </md-tab>
+        </md-tabs>
+        <br />
+        <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+          <div class="md-layout-item md-size-50 center-text">
+            <span class="md-headline">Filter Out</span>  
+          </div>
+        </div>
+        <br />
+        <br />
+        <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
+          <div class="md-layout-item md-size-25 img-container">
+            <img class="filter-img" src="static/faces.jpg">
+            <span class="md-headline pic-center">Faces</span>
+          </div>
+          <div class="md-layout-item md-size-25 img-container">
+            <img class="filter-img" src="static/txt.jpg">
+            <span class="md-headline pic-center">Text</span>
+          </div>
+          <div class="md-layout-item md-size-25 img-container">
+            <img class="filter-img" src="static/dom_colors.png">
+            <span class="md-headline pic-center">Colors</span>
+          </div>
+        </div>
+        <br />
+      </div>
     </div>
   </div>
 </template>
-
 <script>
-  import SystemInformation from './LandingPage/SystemInformation'
-  import Auth from './Auth';
-
-  export default {
-    name: 'landing-page',
-    components: { SystemInformation, Auth },
-    methods: {
-      open (link) {
-        this.$electron.shell.openExternal(link)
-      }
-    }
+import RedditDesc from './RedditDesc';
+import GoogPhotosDesc from './GoogPhotosDesc';
+import Parallax from "vue-parallaxy";
+import firebase from 'firebase';
+import firebaseui from 'firebaseui'
+import {config} from '../config/firebaseConfig'
+export default {
+  name: 'landing_page',
+  mounted() {
+    var uiConfig = {
+      signInSuccessUrl: '/home',
+      signInOptions: [
+        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+        firebase.auth.EmailAuthProvider.PROVIDER_ID
+        ]
+      };
+    const orig = firebase.INTERNAL.node;
+    delete firebase.INTERNAL.node;
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    var ui = new firebaseui.auth.AuthUI(firebase.auth());
+    ui.start('#firebaseui-auth-container', uiConfig);
+  },
+  components: {
+    Parallax, RedditDesc, GoogPhotosDesc
   }
+}
 </script>
 
-<style>
+<style scoped>
   @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+  @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic');
 
   * {
     box-sizing: border-box;
@@ -30,90 +105,94 @@
     padding: 0;
   }
 
-  .full {
+  .fullw {
     width: 100%;
-    height: 100vh;
+  }
+
+  .img-container {
+    position: relative;
+    text-align: center;
+    color: white;
   }
 
   .back {
-    background: #222222;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent !important;
   }
 
   .main-back {
-    background: #333333;
+    background: #3333333b;
+    border-radius: 20px;
   }
 
-  body { font-family: 'Source Sans Pro', sans-serif; }
+  .center-text {
+    text-align: center;
+  }
 
-  #wrapper {
-    background:
-      radial-gradient(
-        ellipse at top left,
-        rgba(255, 255, 255, 1) 40%,
-        rgba(229, 229, 229, .9) 100%
-      );
-    height: 100vh;
-    padding: 60px 80px;
+  .about-wrapper {
+    position: absolute;
+    top: 85vh;
+    left: 0;
     width: 100vw;
   }
 
-  #logo {
-    height: auto;
-    margin-bottom: 20px;
-    width: 420px;
+  .about {
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    background: #303030;
+    padding-top: 2px;
+    padding-right: 5px;
+    padding-left: 5px;
+    padding-bottom: 2px;
   }
 
-  main {
-    display: flex;
-    justify-content: space-between;
+  .about-desc {
+    background: #303030;
+    padding-right: 5px;
+    padding-left: 5px;
+    text-align: center;
   }
 
-  main > div { flex-basis: 50%; }
-
-  .left-side {
-    display: flex;
-    flex-direction: column;
+  .halfw {
+    width: 50vw;
   }
 
-  .welcome {
-    color: #555;
-    font-size: 23px;
-    margin-bottom: 10px;
+  svg {
+    width: 43px !important;
+    height: 43px !important;
+    position: absolute !important;
+    left: 15px !important;
+    top: 2px !important;
   }
 
-  .title {
-    color: #2c3e50;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 6px;
+  .filter-img {
+    border: solid #000;
+    border-width: 1 3px;
+    border-radius: 6px;
   }
 
-  .title.alt {
-    font-size: 18px;
-    margin-bottom: 10px;
+  .pic-center {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-radius: 4px;
+    background: #303030;
   }
 
-  .doc p {
-    color: black;
-    margin-bottom: 10px;
+  .al-left {
+    text-align: left !important;
   }
 
-  .doc button {
-    font-size: .8em;
-    cursor: pointer;
-    outline: none;
-    padding: 0.75em 2em;
-    border-radius: 2em;
-    display: inline-block;
-    color: #fff;
-    background-color: #4fc08d;
-    transition: all 0.15s ease;
-    box-sizing: border-box;
-    border: 1px solid #4fc08d;
-  }
-
-  .doc button.alt {
-    color: #42b983;
-    background-color: transparent;
+  .al-center {
+    text-align: center !important;
   }
 </style>
