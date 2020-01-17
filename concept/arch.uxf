@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>190</x>
+      <y>180</y>
+      <w>250</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>Cloud Functions
+--
+newAccount()
+addPicture(sourceID)
+setWallpaper(deviceID)
+addDevice(deviceName)
+forgetDevice(deviceID)
+setDeviceConfig(deviceID, deviceConfig)
+getDeviceConfig(deviceID, deviceConfig)
+addSource(sourceConfig)
+updateSource(sourceID, sourceConfig)
+deleteSource(sourceID)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>390</y>
+      <w>300</w>
+      <h>420</h>
+    </coordinates>
+    <panel_attributes>SourceConfig
+--
+String[] excludedDeviceIDs
+String name
+String type
+int favor (1-5)
+SourceOptions: {
+  //Reddit
+  String subreddit
+  int numUpvotes
+  String timeSpan
+  String sortBy (popularity or hottest)
+  //Google Photos
+  String type
+  String id
+  String sortBy (newest, oldest, null)
+  //Folder
+  String path
+  String sortBy (newest, oldest, null)
+}
+ImageFilters: {
+  bool faces
+  bool text
+}</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>350</x>
+      <y>390</y>
+      <w>240</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>DeviceConfig
+--
+int minW
+int minH
+float targetAspectRatio
+int targetColor
+float targetColorRange</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
