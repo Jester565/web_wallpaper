@@ -6,7 +6,7 @@ service cloud.firestore {
     }
     match /devices/{document=**} {
     	allow create: if request.auth.uid == request.resource.data.userID;
-      allow read, delete: if request.auth.uid == resource.data.userID;
+      allow read, delete: if resource == null || request.auth.uid == resource.data.userID;
       allow update: if request.auth.uid == resource.data.userID && request.auth.uid == request.resource.data.userID;
     }
     match /images/{document=**} {

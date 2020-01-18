@@ -31,17 +31,12 @@ const getDeviceID = async (userID) => {
 }
 
 const getDeviceDoc = async (deviceID) => {
-    try {
-        let deviceDoc = await firebase
-        .firestore()
-        .collection('devices')
-        .doc(deviceID)
-        .get();
-        return deviceDoc;
-    } catch (ex) {
-        console.log(ex);
-        return null;
-    }
+    let deviceDoc = await firebase
+    .firestore()
+    .collection('devices')
+    .doc(deviceID)
+    .get();
+    return deviceDoc;
 }
 
 const addDefaultDevice = async (deviceID, userID) => {
@@ -81,7 +76,7 @@ export default {
         console.log("USER: ", this.user);
         let deviceID = await getDeviceID(this.user.uid);
         let deviceDoc = await getDeviceDoc(deviceID);
-        if (deviceDoc && deviceDoc.exists) {
+        if (deviceDoc.exists) {
             this.deviceData = deviceDoc.data();
         } else {
             //Add device with default config if new
