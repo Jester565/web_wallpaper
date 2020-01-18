@@ -1,5 +1,5 @@
 <template> 
-    <div>
+    <div class="fullw">
         <div class="md-layout fullw bg" :class="`md-alignment-center-space-around`">
             <div class="md-layout-item md-size-60">
                 <span class="md-headline">Hello, {{user.displayName}}</span>
@@ -8,48 +8,92 @@
                 <md-button class="md-primary md-raised" v-on:click="logOut()">Log Out</md-button>
             </div>
         </div>
-        <div class="parallax-wrapper">
-            <parallax fixed="true">
-                <img src="static/bg.jpg" alt="hello"> 
+        <div class="parallax-wrapper fullw">
+            <parallax>
+                <img src="static/bg.jpg" alt="Your Current Wallpaper"> 
             </parallax>
-            <div class="back">
-                <br />
-                <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
-                    <div class="md-layout-item md-size-50 center-text">
-                        <span class="md-display-1">Today's Wallpaper</span>
-                    </div>
-                </div>
-                <div class="md-layout full" :class="`md-alignment-center-space-around`">
-                    <div class="md-layout-item md-size-50 main-back center-text">
-                        <span class="md-display-2">r/wallpapers</span>
-                    </div>
-                </div>
-            </div>
         </div>
-        <ImgSourceRow />
     </div>
 </template>
 <script>
-import ImgSource from './ImgSourceRow'
+const DEFAULT_ASPECT_RATIO_OFF = 0.5
+
+import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
 import Parallax from "vue-parallaxy"
+import IpcHelper from "../utils/ipcHelper"
+
+const getDeviceID = async (userID) => {
+    let machineID = await IpcHelper.invoke("get-machine-id", "machine-id");
+    //Append userID to machineID so that multiple users can use same device
+    let deviceID = userID + machineID;
+    return deviceID;
+}
+
+const getDeviceDoc = async (deviceID) => {
+    try {
+        let deviceDoc = await firebase
+        .firestore()
+        .collection('devices')
+        .doc(deviceID)
+        .get();
+        return deviceDoc;
+    } catch (ex) {
+        console.log(ex);
+        return null;
+    }
+}
+
+const addDefaultDevice = async (deviceID, userID) => {
+    let { width, height } = await IpcHelper.invoke("get-resolution", "resolution");
+    let hostname = await IpcHelper.invoke("get-hostname", "hostname");
+    let aspectRatio = width / height;
+    let deviceData = {
+        userID: userID,
+        minRes: { width, height },
+        name: hostname,
+        prevWallpapers: [],
+        targetAspectRatio: {
+            aspectRatio,
+            off: DEFAULT_ASPECT_RATIO_OFF
+        },
+        targetColor: null
+    };
+
+    await firebase
+    .firestore()
+    .collection('devices')
+    .doc(deviceID)
+    .set(deviceData);
+    return deviceData;
+}
+
 export default {
     name: 'home',
     data(){
         return {
-            user: {}
+            user: {},
+            deviceData: null
         }
     },
-    created() { 
+    async created() { 
         this.user = firebase.auth().currentUser;
         console.log("USER: ", this.user);
+        let deviceID = await getDeviceID(this.user.uid);
+        let deviceDoc = await getDeviceDoc(deviceID);
+        if (deviceDoc && deviceDoc.exists) {
+            this.deviceData = deviceDoc.data();
+        } else {
+            //Add device with default config if new
+            this.deviceData = await addDefaultDevice(deviceID, this.user.uid);
+        }
     },
     methods: { 
         logOut() { 
             firebase.auth().signOut();
         }  
     },
-    components: { Parallax, ImgSource }
+    components: { Parallax }
 };
 </script>
 

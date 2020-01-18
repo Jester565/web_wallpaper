@@ -1,4 +1,6 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, screen, ipcMain } from 'electron'
+import {machineId, machineIdSync} from 'node-machine-id'
+import os from 'os'
 
 /**
  * Set `__static` path to static files in production
@@ -14,13 +16,13 @@ const winURL = process.env.NODE_ENV === 'development'
   : `file://${__dirname}/index.html`
 
 function createWindow () {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
   /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 563,
+    width, height,
     useContentSize: true,
-    width: 1000,
     frame: false
   })
 
@@ -43,6 +45,26 @@ app.on('activate', () => {
   if (mainWindow === null) {
     createWindow()
   }
+})
+
+//Handlers for invocations from the renderer
+
+//get the resolution of the display
+ipcMain.on('get-resolution', async (event) => {
+  console.log("Invoked resolution")
+  let resolution = screen.getPrimaryDisplay().workAreaSize
+  event.sender.send('resolution', resolution)
+})
+
+//get a unique, persistent id for the device
+ipcMain.on('get-machine-id', async (event) => {
+  let machineID = await machineId()
+  event.sender.send('machine-id', machineID)
+})
+
+ipcMain.on('get-hostname', async (event) => {
+  let hostname = os.hostname()
+  event.sender.send('hostname', hostname)
 })
 
 /**
