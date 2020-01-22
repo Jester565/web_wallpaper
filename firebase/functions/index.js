@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const _ = require('lodash');
 admin.initializeApp();
 
 /*
@@ -71,6 +72,57 @@ exports.removeUserDoc = functions.auth.user().onDelete(async (user) => {
         //Delete user
         await userRef.delete();
         console.log(`Deleted user: ${user.uid}`);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+/*
+    New devices are added to the user's devices array
+*/
+exports.deviceCreated = functions.firestore.document('devices/{deviceID}').onCreate(async (device) => {
+    try {
+        const db = admin.firestore();
+        let userID = device.data().userID;
+
+        await db.collection('users').doc(userID).update({
+            devices: admin.firestore.FieldValue.arrayUnion(device.ref)
+        });
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+/*
+    Deleted devices are removed from the user's devices array
+*/
+exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDelete(async (device, ctx) => {
+    try {
+        const db = admin.firestore();
+        let userID = device.data().userID;
+        let deviceID = ctx.params.deviceID;
+        let userRef = db.collection('users').doc(userID);
+        console.log(`Removing device (${deviceID}) from user (${userID})`);
+
+        await db.runTransaction(async (t) => {
+            let user = await t.get(userRef)
+            let userData = user.data();
+            //remove device with matching id
+            _.remove(userData.devices, {
+                id: deviceID
+            });
+            for (let source of userData.sources) {
+                //remove device from deviceImages
+                _.remove(source.deviceImages, (devImages) => {
+                    return (devImages.device.id === deviceID);
+                });
+                //No longer exclude deleted device
+                _.remove(source.excludedDevices, {
+                    id: deviceID
+                });
+            }
+            t.set(userRef, userData);
+        });
     } catch (err) {
         console.error(err);
     }
