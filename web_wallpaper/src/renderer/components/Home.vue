@@ -1,11 +1,18 @@
 <template> 
     <div class="fullw">
-        <div class="md-layout fullw bg" :class="`md-alignment-center-space-around`">
-            <div class="md-layout-item md-size-60">
+        <div class="md-layout fullw bg top-bar" :class="`md-alignment-center-space-between`">
+            <div class="md-layout-item">
                 <span class="md-headline">Hello, {{user.displayName}}</span>
             </div>
-            <div class="md-layout-item md-size-25 right-text">
-                <md-button class="md-primary md-raised" v-on:click="logOut()">Log Out</md-button>
+            <div class="md-layout-item right-text">
+                <md-button 
+                v-if="deviceData" 
+                class="md-raised dark-button" 
+                v-on:click="showDevices()">
+                    <md-icon class="button-icon">{{ (deviceData.type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON }}</md-icon>
+                    {{ deviceData.name }}
+                </md-button>
+                <md-button class="md-raised log-out dark-button" v-on:click="logOut()">Log Out</md-button>
             </div>
         </div>
         <div class="parallax-wrapper fullw">
@@ -13,15 +20,19 @@
                 <img src="static/bg.jpg" alt="Your Current Wallpaper"> 
             </parallax>
         </div>
+        <md-dialog :md-active.sync="devicesOpen">
+            <DeviceConfigs :userID="user.uid" @close="hideDevices" />
+        </md-dialog>
     </div>
 </template>
 <script>
-const DEFAULT_ASPECT_RATIO_OFF = 0.5
-
+const DEFAULT_ASPECT_RATIO_OFF = 0.5;
+import { THIS_DEVICE_TYPE, PC_DEVICE_TYPE, PC_ICON, MOBILE_ICON } from '../utils/constants'
 import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
 import Parallax from "vue-parallaxy"
 import IpcHelper from "../utils/ipcHelper"
+import DeviceConfigs from "./DeviceConfigs"
 
 const getDeviceID = async (userID) => {
     let machineID = await IpcHelper.invoke("get-machine-id", "machine-id");
@@ -40,11 +51,13 @@ const getDeviceDoc = async (deviceID) => {
 }
 
 const addDefaultDevice = async (deviceID, userID) => {
+    //get device data from main process
     let { width, height } = await IpcHelper.invoke("get-resolution", "resolution");
     let hostname = await IpcHelper.invoke("get-hostname", "hostname");
     let aspectRatio = width / height;
     let deviceData = {
         userID: userID,
+        type: THIS_DEVICE_TYPE,
         minRes: { width, height },
         name: hostname,
         prevWallpapers: [],
@@ -52,7 +65,7 @@ const addDefaultDevice = async (deviceID, userID) => {
             aspectRatio,
             off: DEFAULT_ASPECT_RATIO_OFF
         },
-        targetColor: null
+        targetColor: null  //any color is accepted
     };
 
     await firebase
@@ -65,15 +78,18 @@ const addDefaultDevice = async (deviceID, userID) => {
 
 export default {
     name: 'home',
-    data(){
+    data() {
         return {
+            PC_DEVICE_TYPE,
+            PC_ICON,
+            MOBILE_ICON,
             user: {},
-            deviceData: null
+            deviceData: null,
+            devicesOpen: false
         }
     },
     async created() { 
         this.user = firebase.auth().currentUser;
-        console.log("USER: ", this.user);
         let deviceID = await getDeviceID(this.user.uid);
         let deviceDoc = await getDeviceDoc(deviceID);
         if (deviceDoc.exists) {
@@ -83,12 +99,18 @@ export default {
             this.deviceData = await addDefaultDevice(deviceID, this.user.uid);
         }
     },
-    methods: { 
+    methods: {
+        showDevices() {
+            this.devicesOpen = true;
+        },
+        hideDevices() {
+            this.devicesOpen = false;
+        },
         logOut() { 
             firebase.auth().signOut();
         }  
     },
-    components: { Parallax }
+    components: { Parallax, DeviceConfigs }
 };
 </script>
 
@@ -141,5 +163,29 @@ export default {
 
     .parallax-wrapper {
         position: relative;
+    }
+
+    .log-out {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .dark-button {
+        background: black;
+        border: solid #999999 1px;
+    }
+
+    .dark-button:hover  {
+        background: #0F0F0F;
+        border: solid white 1px;
+    }
+
+    .top-bar {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    .button-icon {
+        margin-right: 2px;
     }
 </style>

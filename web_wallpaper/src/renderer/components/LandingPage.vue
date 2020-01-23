@@ -32,10 +32,10 @@
         </div>
         <br />
         <md-tabs class="md-primary" md-alignment="centered" md-dynamic-height="true">
-          <md-tab id="tab-home" md-icon="static/reddit.svg" md-dynamic-height="true">
+          <md-tab id="tab-reddit" md-icon="static/reddit.svg" md-dynamic-height="true">
             <RedditDesc />
           </md-tab>
-          <md-tab id="tab-a" md-icon="static/gp.svg">
+          <md-tab id="tab-goog-photos" md-icon="static/gp.svg">
             <GoogPhotosDesc />
           </md-tab>
         </md-tabs>
