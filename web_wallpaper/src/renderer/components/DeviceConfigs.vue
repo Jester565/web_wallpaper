@@ -8,7 +8,7 @@
                 :key="deviceDoc.id" 
                 :md-label="deviceDoc.name"
                 :md-icon="(deviceDoc.type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON">
-                    <p>Device</p>
+                    <DeviceConfig :deviceID="deviceDoc.id" :userID="userID" />
                 </md-tab>
             </md-tabs>
         </md-content>
@@ -20,6 +20,7 @@
 </template>
 <script>
 import { PC_DEVICE_TYPE, MOBILE_ICON, PC_ICON } from '../utils/constants'
+import DeviceConfig from './DeviceConfig'
 import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'
 
@@ -64,7 +65,8 @@ export default {
         close() {
             this.$emit('close');
         }
-    }
+    },
+    components: [ DeviceConfig ]
 };
 </script>
 
