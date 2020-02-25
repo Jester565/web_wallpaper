@@ -32,14 +32,8 @@ import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
 import Parallax from "vue-parallaxy"
 import IpcHelper from "../utils/ipcHelper"
+import DeviceHelper  from "../utils/deviceHelper";
 import DeviceConfigs from "./DeviceConfigs"
-
-const getDeviceID = async (userID) => {
-    let machineID = await IpcHelper.invoke("get-machine-id", "machine-id");
-    //Append userID to machineID so that multiple users can use same device
-    let deviceID = userID + machineID;
-    return deviceID;
-}
 
 const getDeviceDoc = async (deviceID) => {
     let deviceDoc = await firebase
@@ -54,7 +48,7 @@ const addDefaultDevice = async (deviceID, userID) => {
     //get device data from main process
     let { width, height } = await IpcHelper.invoke("get-resolution", "resolution");
     let hostname = await IpcHelper.invoke("get-hostname", "hostname");
-    let aspectRatio = width / height;
+    let aspectRatio = Math.round((width / height) * 100) / 100;
     let deviceData = {
         userID: userID,
         type: THIS_DEVICE_TYPE,
@@ -65,7 +59,10 @@ const addDefaultDevice = async (deviceID, userID) => {
             aspectRatio,
             off: DEFAULT_ASPECT_RATIO_OFF
         },
-        targetColor: null  //any color is accepted
+        targetColor: {
+            color: { r: 0, g:0, b:0 },
+            off: 0.5
+        }
     };
 
     await firebase
@@ -90,7 +87,7 @@ export default {
     },
     async created() { 
         this.user = firebase.auth().currentUser;
-        let deviceID = await getDeviceID(this.user.uid);
+        let deviceID = await DeviceHelper.getThisDeviceID(this.user.uid);
         let deviceDoc = await getDeviceDoc(deviceID);
         if (deviceDoc.exists) {
             this.deviceData = deviceDoc.data();

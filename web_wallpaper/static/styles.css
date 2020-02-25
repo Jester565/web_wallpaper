@@ -1,0 +1,22 @@
+/* Set scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #222222;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ddd; 
+}
+
+/* Override white theming in vue-color Chrome component */
+.vc-chrome-body {
+    background: #333 !important;
+    background-color: #333 !important;
+}
+
+.vc-chrome-hue-wrap .vc-hue-picker, .vc-chrome-alpha-wrap .vc-alpha-picker {
+    box-shadow: 0 1px 4px 0 rgba(255, 255, 255, 0.37) !important;
+}
