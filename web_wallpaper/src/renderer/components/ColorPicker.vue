@@ -1,15 +1,22 @@
 <template> 
     <div class="md-layout md-alignment-center-left">
         <md-field class="md-layout-item">
-            <chrome-color-picker :value="color" @input="onColorUpdate" />
+            <chrome-color-picker :class="{ 'no-input': disabled }" :value="color" @input="onColorUpdate" />
         </md-field>
         <div class="md-layout-item off-colors-div">
             <div>
                 <span class="md-subheading">Range</span>
                 <br />
-                <input type="range" :value="off" @input="onOffUpdate($event.target.value)"> {{ off }}%
+                <input type="range" 
+                class="range"
+                :value="off" 
+                @input="onOffUpdate($event.target.value)"
+                :disabled="disabled"> 
+                <span class="range-output">{{ off }}%</span>
             </div>
-            <div v-if="offColors" class="md-layout off-colors-div">
+            <br />
+            <span class="md-subheading">Accepted Colors</span>
+            <div v-if="offColors" class="md-layout">
                 <div 
                 v-for="offColor in offColors"
                 :key="offColor"
@@ -27,7 +34,8 @@ export default {
     name: 'color-picker',
     props: [
         "color",
-        "off"
+        "off",
+        "disabled"
     ],
     methods: {
         onColorUpdate (color) {
@@ -35,7 +43,7 @@ export default {
         },
         onOffUpdate (off) {
             this.$emit('update:off', off);
-        }
+        },
     },
     computed: { 
       	offColors() {
@@ -50,7 +58,7 @@ export default {
             //get min and max distance from color
             let getColorDiffs = (channels, off) => {
                 //convert off to range between 0 - 255
-                let colorDist = (off / 100.0) * 255.0;
+                let colorDist = (off / 100.0) * 255;
                 //max difference between channel and min & max val
                 let colorDiff = Math.sqrt(Math.pow(colorDist, 2) / channels.length);
                 let minColor = [];
@@ -132,23 +140,20 @@ export default {
     @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic');
 
     .disabled {
-        background: #444444;
-    }
-
-    .device-div {
-        overflow-y: scroll;
-        height: 45vh;
-        width: 100%;
-        padding-right: 18px;
+        background: #111111;
     }
 
     .off-colors-div {
         width: 200px;
         max-width: 200px;
+        margin-left: 15px;
     }
 
     .off-color {
-        width: 15px;
         height: 20px;
+    }
+
+    .no-input {
+        pointer-events:none;
     }
 </style>
