@@ -26,7 +26,9 @@
     </div>
 </template>
 <script>
-const DEFAULT_ASPECT_RATIO_OFF = 0.5;
+const DEFAULT_ASPECT_RATIO_OFF = 30;
+const DEFAULT_COLOR = { r: 0, g: 0, b: 0 };
+const DEFAULT_COLOR_OFF = 30;
 import { THIS_DEVICE_TYPE, PC_DEVICE_TYPE, PC_ICON, MOBILE_ICON } from '../utils/constants'
 import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
@@ -57,11 +59,13 @@ const addDefaultDevice = async (deviceID, userID) => {
         prevWallpapers: [],
         targetAspectRatio: {
             aspectRatio,
-            off: DEFAULT_ASPECT_RATIO_OFF
+            off: DEFAULT_ASPECT_RATIO_OFF,
+            disabled: false
         },
         targetColor: {
-            color: { r: 0, g:0, b:0 },
-            off: 0.5
+            color: DEFAULT_COLOR,
+            off: DEFAULT_COLOR_OFF,
+            disabled: true
         }
     };
 

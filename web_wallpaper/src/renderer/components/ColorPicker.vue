@@ -39,7 +39,7 @@ export default {
     ],
     methods: {
         onColorUpdate (color) {
-            this.$emit('update:color', color.rgba);
+            this.$emit('update:color', { "r": color.rgba.r, "g": color.rgba.g, "b": color.rgba.b });
         },
         onOffUpdate (off) {
             this.$emit('update:off', off);
