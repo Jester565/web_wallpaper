@@ -20,6 +20,9 @@
                 <img src="static/bg.jpg" alt="Your Current Wallpaper"> 
             </parallax>
         </div>
+        <div class="fullw">
+            <source-cards :userID="user.uid" />
+        </div>
         <md-dialog :md-active.sync="devicesOpen">
             <DeviceConfigs :userID="user.uid" @close="hideDevices" />
         </md-dialog>
@@ -36,6 +39,7 @@ import Parallax from "vue-parallaxy"
 import IpcHelper from "../utils/ipcHelper"
 import DeviceHelper  from "../utils/deviceHelper";
 import DeviceConfigs from "./DeviceConfigs"
+import SourceCards from "./SourceCards"
 
 const getDeviceDoc = async (deviceID) => {
     let deviceDoc = await firebase
@@ -111,7 +115,7 @@ export default {
             firebase.auth().signOut();
         }  
     },
-    components: { Parallax, DeviceConfigs }
+    components: { Parallax, DeviceConfigs, "source-cards": SourceCards }
 };
 </script>
 
@@ -152,7 +156,7 @@ export default {
         position: absolute;
         left: 0;
         top: 0;
-        width: 100vw;
+        width: 100%;
         height: 100vh;
         background: transparent !important;
     }

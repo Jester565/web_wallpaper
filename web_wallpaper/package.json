@@ -51,7 +51,7 @@
     }
   },
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "custom-electron-titlebar": "^3.1.0",
     "firebase": "^7.2.1",
     "firebaseui": "^4.2.0",
