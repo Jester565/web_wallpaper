@@ -4,28 +4,28 @@
         <md-content>
             <md-steppers md-linear md-dynamic-height :md-active-step.sync="activeStep">
                 <!-- Pick type, set default config objects -->
-                <md-step id="type-select" md-label="Select Source Type" :md-done="selectedType">
+                <md-step id="type-select" md-label="Select Source Type" :md-done="selectedType != null">
                     <div class="md-layout md-alignment-center"
-                    v-for="sourceType in sourceTypes"
-                    :key="sourceType.title">
+                    v-for="(consts, type) in typeConsts"
+                    :key="type">
                         <md-button 
-                        @click="setType(sourceType)"
-                        :disabled="sourceType === selectedType"
+                        @click="setType(type)"
+                        :disabled="type === selectedType"
                         :md-ripple="false"
                         class="md-layout-item md-raised md-primary md-xlarge-size-25 md-large-size-33 md-medium-size-50 md-small-size-100 md-xsmall-size-100">
                             <div class="md-layout md-alignment-center">
-                                <md-icon class="md-layout-item md-size-2x type-button-icon" :md-src="sourceType.icon"  /> <span class="md-layout-item type-button-title">{{sourceType.title}}</span>
+                                <md-icon class="md-layout-item md-size-2x type-button-icon" :md-src="consts.icon" /> <span class="md-layout-item type-button-title">{{consts.displayName}}</span>
                             </div>
                         </md-button>
                     </div>
                 </md-step>
                 <!-- Use RedditConfig, v-model of empty config -->
                 <md-step id="source-config" md-label="Configure Source">
-                    
-                </md-step>
-                <!-- Set name, confirm -->
-                <md-step id="third" md-label="Confirm">
-                    
+                    <source-config v-if="source != null" 
+                    :value="source" 
+                    :userID="userID" 
+                    :sourceID="sourceID"
+                    @onSave="onSave" />
                 </md-step>
             </md-steppers>
         </md-content>
@@ -43,50 +43,53 @@
     </div>
 </template>
 <script>
+import SourceConfig from './SourceConfig'
+import { Consts as TypeConsts } from './SourceTypeConfigs/index'
+import { v4 as uuidv4 } from 'uuid'
 import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'
-const SOURCE_TYPES = [
-    {
-        icon: "/static/reddit.svg",
-        title: "Reddit",
-        config: {
-            subreddit: "",
-            minUpvotes: null,
-            sortBy: "Hottest",
-            timeSpan: "Week"
-        }
-    },
-    {
-        icon: "/static/gp.svg",
-        title: "Google Photos",
-        config: {
-            //TODO
-        }
-    }]
+import _ from 'lodash';
  
 export default {
     name: 'source_creator',
     created() { 
-        
+        this.sourceID = uuidv4();
     },
+    props: [ "userID" ],
     data() {
         return {
             showCloseDialog: false,
             selectedType: null,
-            sourceTypes: SOURCE_TYPES,
-            activeStep: 'type-select'
+            typeConsts: TypeConsts,
+            activeStep: 'type-select',
+            sourceID: null,
+            source: null
         }
     },
     methods: {
-        setType(sourceType) {
-            this.selectedType = sourceType;
+        createInitSource(type) {
+            return {
+                name: "",
+                rating: 5,
+                type: type,
+                typeConfig: _.cloneDeep(TypeConsts[type].initConfig)
+            }
+        },
+        setType(typeID) {
+            if (typeID !== this.selectedType) {
+                this.source = this.createInitSource(typeID);
+            }
+            this.selectedType = typeID;
             this.activeStep = 'source-config';
+        },
+        onSave(source) {
+            this.$emit('close', source);
         },
         close() {
             this.$emit('close');
         }
     },
-    components: {  }
+    components: { 'source-config': SourceConfig }
 };
 </script>
  

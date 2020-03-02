@@ -43,7 +43,7 @@
             </div>
         </div>
         <md-dialog :md-active.sync="addSourceOpen">
-            <source-creator @close="addSourceOpen = false" />
+            <source-creator :userID="userID" @close="addSourceOpen = false" />
         </md-dialog>
     </div>
 </template>
