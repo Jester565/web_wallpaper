@@ -1,0 +1,124 @@
+<template> 
+    <div>
+        <md-card class="md-elevation-14 source-card" @click.native="configOpen = true">
+            <md-card-media-cover md-solid>
+                <md-card-media md-ratio="4:3">
+                    <img class="source-img" src="/static/new_source.webp" alt="Sources">
+                </md-card-media>
+                <md-card-area>
+                    <md-card-header>
+                        <div class="md-layout md-alignment-center-left">
+                            <md-icon 
+                            v-if="sourceTypeConsts != null"
+                            class="md-layout-item md-size-3x" 
+                            :md-src="sourceTypeConsts.icon"  />
+                            <span class="md-layout-item md-title">{{source.name}}</span>
+                        </div>
+                    </md-card-header>
+                </md-card-area>
+            </md-card-media-cover>
+        </md-card>
+        <md-dialog :md-active.sync="configOpen">
+            <md-dialog-title>{{source.name}}</md-dialog-title>
+            <source-config 
+            class="source-config"
+            :value="source"
+            :userID="userID" 
+            :sourceID="sourceID"
+            :deviceID="deviceID" 
+            @onModificationChanged="sourceModified = $event"
+            @onSave="configOpen = false" />
+            <md-dialog-actions>
+                <md-button class="md-primary" @click="onConfigClose">Close</md-button>
+            </md-dialog-actions>
+            <md-dialog-confirm
+            :md-active.sync="showCloseDialog"
+            md-title="Discard Changes to Source?"
+            md-content="Your source won't be modified"
+            md-confirm-text="Don't Save"
+            md-cancel-text="Go Back!"
+            @md-cancel="showCloseDialog = false"
+            @md-confirm="configOpen = false" />
+        </md-dialog>
+    </div>
+</template>
+<script>
+import { Consts as SourceTypeConsts } from './SourceTypeConfigs/index'
+import WallpaperCarousel from './WallpaperCarousel'
+import SourceConfig from './SourceConfig'
+import DeviceHelper from '../utils/deviceHelper'
+ 
+export default {
+    name: 'source_card',
+    async created() { 
+        await this.setDeviceID();
+    },
+    props: {
+        userID: {
+            type: String,
+            required: true
+        },
+        sourceID: {
+            type: String,
+            required: true
+        },
+        source: {
+            type: Object,
+            required: true
+        }
+    },
+    data() {
+        return {
+            deviceID: null,
+            configOpen: false,
+            showCloseDialog: false,
+            sourceModified: false
+        }
+    },
+    computed: {
+        wallpapers() {
+            return (this.source != null && this.source.deviceImages && this.deviceID)? this.source.deviceImages[this.deviceID]: null;
+        },
+        sourceTypeConsts() {
+            return (this.source != null)? SourceTypeConsts[this.source.type]: null
+        }
+    },
+    methods: {
+        async setDeviceID() {
+            this.deviceID = await DeviceHelper.getThisDeviceID(this.userID);
+        },
+        onConfigClose() {
+            if (this.sourceModified) {
+                this.showCloseDialog = true;
+            } else {
+                this.configOpen = false;
+            }
+        }
+    },
+    components: { 'source-config': SourceConfig, 'wallpaper-carousel': WallpaperCarousel }
+};
+</script>
+ 
+<style scoped>
+    @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+    @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic');
+
+    .source-card {
+        border: solid black 2px;
+    }
+
+    .source-card:hover {
+        background: #111;
+        border: solid white 4px;
+    }
+
+    .source-img {
+        width: 100%;
+        object-fit: contain;
+    }
+
+    .source-config {
+        margin: 10px;
+    }
+</style>
+

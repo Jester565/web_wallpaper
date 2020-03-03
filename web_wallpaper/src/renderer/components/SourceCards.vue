@@ -19,7 +19,7 @@
             v-for="source in sortedSources"
             :key="source.id"
             class="md-layout-item md-xlarge-size-20 md-large-size-25 md-medium-size-33 md-small-size-50 md-xsmall-size-100">
-                
+                <source-card :userID="userID" :source="source" :sourceID="source.id"  />
             </div>
             <div class="md-layout-item md-xlarge-size-20 md-large-size-25 md-medium-size-33 md-small-size-50 md-xsmall-size-100">
                 <md-card class="md-elevation-14 add-card">
@@ -49,6 +49,7 @@
 </template>
 <script>
 import SourceCreator from './SourceCreator'
+import SourceCard from './SourceCard'
 import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'
 const SortOptions = {
@@ -103,7 +104,14 @@ export default {
     computed: {
         sortedSources () {
             if (this.sources && this.sortBy) {
-                return [...this.sources].sort((source1, source2) => {
+                let sourcesArr = [];
+                for (let sourceID in this.sources) {
+                    sourcesArr.push({
+                        id: sourceID,
+                        ...this.sources[sourceID]
+                    });
+                }
+                return sourcesArr.sort((source1, source2) => {
                     let sortVal = 0;
                     if (this.sortBy === SortOptions.ALPH) {
                         sortVal = source1.name.localeCompare(source2.name);
@@ -138,7 +146,7 @@ export default {
             this.sources = userData.sources;
         }
     },
-    components: { 'source-creator': SourceCreator }
+    components: { 'source-creator': SourceCreator, 'source-card': SourceCard }
 };
 </script>
  

@@ -34,6 +34,8 @@ import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'
 import { ConfigComponents as TypeConfigComponents, Consts as TypeConsts } from './SourceTypeConfigs/index'
 import LikeRater from './LikeRater'
+
+const DEFFAULT_RATING = 5;
  
 export default {
     name: 'source_config',
@@ -45,7 +47,8 @@ export default {
             saving: false,
             suggestedName: "Name",
             validateBus: new Vue(),
-            typeConfigCheckable: false
+            typeConfigCheckable: false,
+            prevIsModified: false
         }
     },
     computed: {
@@ -73,6 +76,17 @@ export default {
                 }
             },
             immediate: true
+        },
+        source: {
+            handler (newSource) {
+                let isModified = Object.keys(firestoreHelper.getDataDiff(newSource, this.remoteSource)).length > 0;
+                if (isModified !== this.prevIsModified) {
+                    this.$emit("isModifiedChanged", isModified);
+                    this.prevIsModified = isModified;
+                }
+            },
+            deep: true,
+            immediate: true
         }
     },
     methods: {
@@ -92,28 +106,28 @@ export default {
             if (this.source.name == null || this.source.name.length == 0) {
                 this.source.name = this.suggestedName;
             }
-            let modifiedData = firestoreHelper.getDataDiff(this.source, this.remoteSource);
-            if (Object.keys(modifiedData).length > 0) {
-                try {
-                    await firebase
-                    .firestore()
-                    .collection('users')
-                    .doc(this.userID)
-                    .set({
-                        sources: {
-                            [this.sourceID]: modifiedData
-                        }
-                    }, { merge: true });
-                    //Update remoteSource since local data was set
-                    this.remoteSource = _.cloneDeep(this.source);
-                    //Pass new source to parent
-                    this.$emit("onSave", _.cloneDeep(this.source));
-                } catch (e) {
-                    console.warn("Could not set device: ", this.deviceID, e);
-                }
-            } else {
-                //no changes, no need to set
+            //update modified & created times
+            if (this.source.created == null) {
+                this.source.created = Date.now();
+            }
+            this.source.modified = Date.now();
+            //update modified data timestamps
+            try {
+                await firebase
+                .firestore()
+                .collection('users')
+                .doc(this.userID)
+                .set({
+                    sources: {
+                        [this.sourceID]: this.source
+                    }
+                }, { merge: true });
+                //Update remoteSource since local data was set
+                this.remoteSource = _.cloneDeep(this.source);
+                //Pass new source to parent
                 this.$emit("onSave", _.cloneDeep(this.source));
+            } catch (e) {
+                console.warn("Could not set device: ", this.deviceID, e);
             }
             this.saving = false;
         }

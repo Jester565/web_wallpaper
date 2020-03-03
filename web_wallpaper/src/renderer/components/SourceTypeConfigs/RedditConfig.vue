@@ -70,7 +70,6 @@ export default {
     },
     computed: {
         subredditErrorMsg() {
-            console.log("CHECKING ERR MSG");
             if (this.subredditExistances[this.value.subreddit] === false) {
                 return "The subreddit does not exist";
             }
@@ -80,14 +79,17 @@ export default {
     watch: {
         value: {
             handler (value) {
-                console.log("SUBREDDIT: ", value.subreddit);
-                let valid = (value.subreddit != null && value.subreddit.length > 0 && this.subredditExistances[value.subreddit] !== false);
+                let valid = (value.subreddit != null && 
+                value.subreddit.length > 0 && 
+                value.sortBy != null &&
+                ((value.sortBy != SortBy.Top) || (value.timeSpan != null)));
                 if (valid !== this.prevIsValid) {
                     this.$emit('checkableChanged', valid);
                     this.prevIsValid = valid;
                 }
             },
-            deep: true
+            deep: true,
+            immediate: true
         }
     },
     methods: {
