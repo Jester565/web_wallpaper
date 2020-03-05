@@ -4,10 +4,12 @@
   "description": "Changes wallpaper to subreddit / photos",
   "main": "main.js",
   "dependencies": {
+    "@google-cloud/vision": "^1.10.0",
     "lowdb": "^1.0.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "sharp": "^0.23.1",
+    "requests": "^0.3.0",
+    "sharp": "^0.23.4",
     "wallpaper": "^4.4.1"
   },
   "devDependencies": {

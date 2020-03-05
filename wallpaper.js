@@ -1,25 +1,27 @@
 const MAX_POSTS = 200;
 const rp = require("request-promise");
-const TopStream = require("./top");
+const PostStream = require("./postStream");
 const querystring = require('querystring');
 const vision = require('@google-cloud/vision');
 const sharp = require('sharp');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
-
+ 
 const adapter = new FileSync('db.json');
 const db = low(adapter);
-
+ 
 db.defaults({ excludeIDs: {}, subreddits: [ "disneyland" ] })
   .write();
-
+ 
 const decodeRedditImgUrl = (url) => {
     let qsStartI = url.indexOf('?');
     if (qsStartI >= 0) {
         let baseUrl = url.substr(0, qsStartI);
         let qsUrl = url.substr(qsStartI + 1);
         let qs = querystring.decode(qsUrl);
-        qs["s"] = qs["amp;s"];
+        if (qs["s"] == null) {
+            qs["s"] = qs["amp;s"];
+        }
         delete qs["amp;s"];
         console.log("QS: ", JSON.stringify(qs));
         if (Object.keys(qs).length > 0) {
@@ -29,7 +31,7 @@ const decodeRedditImgUrl = (url) => {
     }
     return url;
 }
-
+ 
 /*
     subreddit: The subreddit to get images from
     age: day, week, year, etc. used to determine the age of posts to list
@@ -42,7 +44,7 @@ let getPrioritizedSubredditImgUrls = (subreddit, age, resolution, excludeIDs = {
     return new Promise((resolve) => {
         let validImgs = [];
         let maxUpvotes = 0;
-        const readable = new TopStream(subreddit, age, MAX_POSTS);
+        const readable = new PostStream(subreddit, 'hot', MAX_POSTS, age);
         readable.on('data', (postData) => {
             let post = JSON.parse(postData);
             if (excludeIDs == null || !excludeIDs[post.id]) {
@@ -66,11 +68,6 @@ let getPrioritizedSubredditImgUrls = (subreddit, age, resolution, excludeIDs = {
         });
         readable.on('end', () => {
             console.log("CLOSED");
-            validImgs = validImgs.filter((img) => {
-                if (!excludeImgIDs[img.id]) {
-
-                }
-            })
             validImgs.sort((img1, img2) => {
                 return (img2.upvotes / maxUpvotes + (1 - img2.aspectRatioDiff)) - (img1.upvotes / maxUpvotes + (1 - img1.aspectRatioDiff));
             });
@@ -79,7 +76,7 @@ let getPrioritizedSubredditImgUrls = (subreddit, age, resolution, excludeIDs = {
         });
     });
 }
-
+ 
 let run = async (resolution) => {
     let imgs = await getPrioritizedSubredditImgUrls('disneyland', 'week', resolution, null);
     const client = new vision.ImageAnnotatorClient();
@@ -93,6 +90,7 @@ let run = async (resolution) => {
         };
           
         let resp = await rp(options);
+        console.log("GOT REDDIT IMG");
         let data = resp.body.toString('base64');
         let gPayload = { 
             image: { content: data }, 
@@ -106,21 +104,16 @@ let run = async (resolution) => {
             } };
         const gRes = await client.batchAnnotateImages({requests: [gPayload]});
         const detections = gRes[0].responses[0];
-        console.log(JSON.stringify(detections));
+        console.log("Detections: " + JSON.stringify(detections));
         if (detections.faceAnnotations.length == 0 && detections.textAnnotations.length < 5) {
             let vertices = detections.cropHintsAnnotation.cropHints[0].boundingPoly.vertices;
             let top = vertices[0].y;
             let left = vertices[0].x;
             let width = vertices[2].x - left;
             let height = vertices[2].y - top;
-            console.log("DATA: ", top, left, width, height);
-            await sharp(resp.body)
-            .extract({ top, left, width, height })
-            .resize(resolution.w, resolution.h)
-            .toFile('hello.png');
             return;
         }
     }
 }
-
+ 
 run({w: 1920, h: 1080});

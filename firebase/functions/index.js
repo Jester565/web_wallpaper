@@ -1,6 +1,9 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const _ = require('lodash');
+const { pickDeviceWallpaper } = require('./pickDeviceWallpaper');
+const { addSourceImages } = require('./addSourceImages');
+const { batchUpdateUsers } = require('./updateUsers');
+const { getReqUserID } = require('./utils');
 admin.initializeApp();
 
 /*
@@ -54,13 +57,7 @@ exports.removeUserDoc = functions.auth.user().onDelete(async (user) => {
         let userData = userDoc.data();
         //Delete all user's source images
         let imageDeletionPromises = [];
-        for (let source of userData.sources) {
-            for (let deviceID in source.deviceImages) {
-                for (let imageRef of deviceImages[deviceID].images) {
-                    imageDeletionPromises.push(deleteUserResource(imageRef, user.uid));
-                }
-            }
-        }
+        //TODO: Remove device images
         await Promise.all(imageDeletionPromises);
 
         //Delete all user's devices
@@ -111,19 +108,62 @@ exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDel
             _.remove(userData.devices, {
                 id: deviceID
             });
-            for (let source of userData.sources) {
-                //remove device from deviceImages
-                _.remove(source.deviceImages, (devImages) => {
-                    return (devImages.device.id === deviceID);
-                });
-                //No longer exclude deleted device
-                _.remove(source.excludedDevices, {
-                    id: deviceID
-                });
+            for (let sourceID in userData.sources) {
+                let source = userData.sources[sourceID];
+                
+                if (source.excludedDevices) {
+                    //No longer exclude deleted device
+                    _.remove(source.excludedDevices, {
+                        id: deviceID
+                    });
+                }
             }
             t.set(userRef, userData);
         });
     } catch (err) {
         console.error(err);
     }
+});
+
+exports.addSourceImages = functions.https.onRequest(async (req, res) => {
+    try {
+        let userID = getReqUserID(req);
+
+        const db = admin.firestore();
+        let deviceIDs = req.body.deviceIDs;
+        let sourceID = req.body.sourceID;
+        
+        await addSourceImages(userID, sourceID, deviceIDs, db);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+exports.pickDeviceWallpaper = functions.https.onRequest(async (req, res) => {
+    try {
+        let userID = getReqUserID(req);
+        const db = admin.firestore();
+        let deviceID = req.body.deviceID;
+
+        await pickDeviceWallpaper(userID, deviceID, db);
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+//execute everyday at 4 am
+exports.updateAllUsers = functions.pubsub.schedule('0 4 * * *')
+.timeZone('US/Pacific') // Users can choose timezone - default is America/Los_Angeles
+.onRun(() => {
+    const db = admin.firestore();
+    await batchUpdateUsers(null, db);
+});
+
+exports.batchUpdateUsers = functions.https.onRequest(async (req, res) => {
+    if (req.headers.secret != functions.config().secret) {
+        console.error("Invalid secret!");
+        return;
+    }
+    const db = admin.firestore();
+    await batchUpdateUsers(req.data.startAfterUserID, db);
 });
