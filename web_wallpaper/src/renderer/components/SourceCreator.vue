@@ -25,12 +25,18 @@
                     :value="source" 
                     :userID="userID" 
                     :sourceID="sourceID"
-                    @onSave="onSave" />
+                    :saveBus="saveBus"
+                    @onSaved="onSaved"
+                    @canSaveChanged="isSourceSavable = $event"
+                    class="source-config" />
                 </md-step>
             </md-steppers>
         </md-content>
         <md-dialog-actions>
-            <md-button class="md-primary" @click="showCloseDialog = true">Close</md-button>
+            <md-button class="md-primary md-raised"
+            :disabled="!canSave" 
+            @click="onSave">Save</md-button>
+            <md-button class="md-secondary" @click="showCloseDialog = true">Close</md-button>
         </md-dialog-actions>
         <md-dialog-confirm
         :md-active.sync="showCloseDialog"
@@ -43,6 +49,7 @@
     </div>
 </template>
 <script>
+import Vue from 'vue'
 import SourceConfig from './SourceConfig'
 import { Consts as TypeConsts } from './SourceTypeConfigs/index'
 import { v4 as uuidv4 } from 'uuid'
@@ -63,7 +70,14 @@ export default {
             typeConsts: TypeConsts,
             activeStep: 'type-select',
             sourceID: null,
-            source: null
+            source: null,
+            isSourceSavable: false,
+            saveBus: new Vue()
+        }
+    },
+    computed: {
+        canSave() {
+            return this.isSourceSavable;
         }
     },
     methods: {
@@ -77,12 +91,16 @@ export default {
         },
         setType(typeID) {
             if (typeID !== this.selectedType) {
+                this.isSourceSavable = false;
                 this.source = this.createInitSource(typeID);
             }
             this.selectedType = typeID;
             this.activeStep = 'source-config';
         },
-        onSave(source) {
+        onSave() {
+            this.saveBus.$emit("save");
+        },
+        onSaved(source) {
             this.$emit('close', source);
         },
         close() {
