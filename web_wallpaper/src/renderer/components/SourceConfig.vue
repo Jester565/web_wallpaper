@@ -1,28 +1,33 @@
 <template>
     <div v-if="source">
-        <div class="md-layout md-alignment-center-center">
-            <md-icon class="md-layout-item md-size-3x type-button-icon" :md-src="sourceType.icon"  />
-            <span class="md-layout-item md-display-3 type-button-title">{{ sourceType.displayName }}</span>
-        </div>
-        <div>
-            <md-field>
-                <label>Name</label>
-                <md-input 
-                v-model="source.name" 
+        <div class="config-div">
+            <div class="md-layout md-alignment-center-left">
+                <md-icon class="md-layout-item md-size-2x type-icon" :md-src="sourceType.icon"  />
+                <span class="md-layout-item md-display-2 type-title">{{ sourceType.displayName }}</span>
+            </div>
+            <div class="field-div">
+                <div>
+                    <md-field>
+                        <label>Name</label>
+                        <md-input 
+                        v-model="source.name" 
+                        :disabled="saving"
+                        :placeholder="suggestedName"></md-input>
+                    </md-field>
+                    <like-rater v-model="source.rating" :disabled="saving" />
+                </div>
+                <component :is="source.type" 
+                v-model="source.typeConfig" 
+                :validateBus="validateBus"
                 :disabled="saving"
-                :placeholder="suggestedName"></md-input>
-            </md-field>
-            <like-rater v-model="source.rating" :disabled="saving" />
+                @onValidated="onValidated"
+                @checkableChanged="typeConfigCheckable = $event"
+                @suggestedNameChanged="suggestedName=$event" />
+            </div>
         </div>
-        <component :is="source.type" 
-        v-model="source.typeConfig" 
-        :validateBus="validateBus"
-        :disabled="saving"
-        @onValidated="onValidated"
-        @checkableChanged="typeConfigCheckable = $event"
-        @suggestedNameChanged="suggestedName=$event" />
         <md-button 
-        :disabled="!typeConfigCheckable || saving"
+        v-if="saveBus == null"
+        :disabled="!canSave"
         @click="onSave"
         class="md-raised md-primary">Done</md-button>
     </div>
@@ -39,7 +44,12 @@ const DEFFAULT_RATING = 5;
  
 export default {
     name: 'source_config',
-    props: [ "value", "sourceID", "userID" ],
+    props: [ "value", "sourceID", "userID", "saveBus" ],
+    mounted() {
+        if (this.saveBus != null) {
+            this.saveBus.$on("save", this.onSave);
+        }
+    },
     data() {
         return {
             source: null,
@@ -48,7 +58,8 @@ export default {
             suggestedName: "Name",
             validateBus: new Vue(),
             typeConfigCheckable: false,
-            prevIsModified: false
+            prevIsModified: false,
+            prevCanSave: false
         }
     },
     computed: {
@@ -87,6 +98,26 @@ export default {
             },
             deep: true,
             immediate: true
+        },
+        typeConfigCheckable: {
+            handler (isCheckable) {
+                let canSave = (!this.saving && isCheckable);
+                if (canSave != this.prevCanSave) {
+                    this.$emit("canSaveChanged", canSave);
+                    this.prevCanSave = canSave;
+                }
+                this.canSave = canSave;
+            }
+        },
+        saving: {
+            handler (saving) {
+                let canSave = (!saving && this.typeConfigCheckable);
+                if (canSave != this.prevCanSave) {
+                    this.$emit("canSaveChanged", canSave);
+                    this.prevCanSave = canSave;
+                }
+                this.canSave = canSave;
+            }
         }
     },
     methods: {
@@ -125,7 +156,7 @@ export default {
                 //Update remoteSource since local data was set
                 this.remoteSource = _.cloneDeep(this.source);
                 //Pass new source to parent
-                this.$emit("onSave", _.cloneDeep(this.source));
+                this.$emit("onSaved", _.cloneDeep(this.source));
             } catch (e) {
                 console.warn("Could not set device: ", this.deviceID, e);
             }
@@ -149,14 +180,24 @@ export default {
         width: 75vw;
     }
  
-    .type-button-icon {
-        margin-right: 20px;
-        width: 5em;
+    .type-icon {
+        margin-right: 8px;
+        max-width: 2em;
     }
  
-    .type-button-title {
-        margin-left: 20px;
-        width: 20em;
+    .type-title {
+        margin-left: 8px;
+    }
+
+    .config-div {
+        overflow-y: scroll;
+        height: 45vh;
+        width: 100%;
+        padding-right: 18px;
+    }
+
+    .field-div {
+        margin-left: 4em;
     }
 </style>
  

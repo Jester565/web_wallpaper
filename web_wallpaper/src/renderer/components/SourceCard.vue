@@ -26,10 +26,15 @@
             :userID="userID" 
             :sourceID="sourceID"
             :deviceID="deviceID" 
+            :saveBus="saveBus"
             @onModificationChanged="sourceModified = $event"
-            @onSave="configOpen = false" />
+            @canSaveChanged="canSave = $event"
+            @onSaved="configOpen = false" />
             <md-dialog-actions>
-                <md-button class="md-primary" @click="onConfigClose">Close</md-button>
+                <md-button class="md-primary md-raised"
+                :disabled="!canSave" 
+                @click="onSave">Save</md-button>
+                <md-button class="md-secondary" @click="onConfigClose">Close</md-button>
             </md-dialog-actions>
             <md-dialog-confirm
             :md-active.sync="showCloseDialog"
@@ -43,6 +48,7 @@
     </div>
 </template>
 <script>
+import Vue from 'vue'
 import { Consts as SourceTypeConsts } from './SourceTypeConfigs/index'
 import WallpaperCarousel from './WallpaperCarousel'
 import SourceConfig from './SourceConfig'
@@ -72,7 +78,9 @@ export default {
             deviceID: null,
             configOpen: false,
             showCloseDialog: false,
-            sourceModified: false
+            sourceModified: false,
+            canSave: false,
+            saveBus: new Vue()
         }
     },
     computed: {
@@ -86,6 +94,9 @@ export default {
     methods: {
         async setDeviceID() {
             this.deviceID = await DeviceHelper.getThisDeviceID(this.userID);
+        },
+        onSave() {
+            this.saveBus.$emit("save");  
         },
         onConfigClose() {
             if (this.sourceModified) {
