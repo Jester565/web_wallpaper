@@ -15,7 +15,7 @@ exports.pickDeviceWallpaper = async (userID, deviceID, db) => {
         let imgArr = device.sourceImages[sourceID];
         if (imgArr != null && imgArr.length > 0) {
             let source = userData.sources[sourceID];
-            if (!source.excludedDevices[deviceID]) {
+            if (!source.excludedDevices || !source.excludedDevices[deviceID]) {
                 let imgRef = imgArr[0];
                 let score = getSourceScore(source);
                 scoreArr.push({
@@ -42,5 +42,5 @@ exports.pickDeviceWallpaper = async (userID, deviceID, db) => {
     let newWallpapers = [wallpaperImgRef, ...device.wallpapers];
     await deviceRef.set({
         wallpapers: newWallpapers
-    });
+    }, { merge: true });
 }

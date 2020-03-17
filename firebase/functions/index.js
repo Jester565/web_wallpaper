@@ -127,7 +127,7 @@ exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDel
 
 exports.addSourceImages = functions.https.onRequest(async (req, res) => {
     try {
-        let userID = getReqUserID(req);
+        let userID = await getReqUserID(req);
 
         const db = admin.firestore();
         let deviceIDs = req.body.deviceIDs;
@@ -141,7 +141,7 @@ exports.addSourceImages = functions.https.onRequest(async (req, res) => {
 
 exports.pickDeviceWallpaper = functions.https.onRequest(async (req, res) => {
     try {
-        let userID = getReqUserID(req);
+        let userID = await getReqUserID(req);
         const db = admin.firestore();
         let deviceID = req.body.deviceID;
 

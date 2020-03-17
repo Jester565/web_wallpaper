@@ -71,10 +71,11 @@ const invokeBatchUpdateUsers = async (startAfterUserID) => {
 const updateUserWallpapers = async (userDoc) => {
     let user = userDoc.data();
     if (user.sources != null) {
-        await Promise.all(_.map(Object.keys(user.sources), (sourceID) => invokeAddSourceImages(userDoc, sourceID)));
+        await Promise.all(_.map(Object.keys(user.sources), async (sourceID) => { await invokeAddSourceImages(userDoc, sourceID) }));
     }
+    console.log("After sources");
     if (user.devices != null) {
-        await Promise.all(_.map(user.devices, (deviceRef) => invokePickDeviceWallpaper(userDoc.id, deviceRef.id)));
+        await Promise.all(_.map(user.devices, async (deviceRef) => { await invokePickDeviceWallpaper(userDoc.id, deviceRef.id) }));
     }
 }
 
@@ -86,7 +87,7 @@ exports.batchUpdateUsers = async (startAfterUserID, db) => {
     }
     let collectionSnapshot = await userQuery.get();
     await Promise.all(_.map(collectionSnapshot.docs, (userDoc) => {
-        return updateUserWallpapers(userDoc.data());
+        return updateUserWallpapers(userDoc);
     }));
     //TODO: Determine if it is better to invoke another function or just leave the current function running
     //only request more if we reached the limit

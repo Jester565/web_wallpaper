@@ -1,5 +1,6 @@
 const rp = require('request-promise');
 const PostStream = require('./postStream');
+const querystring = require('querystring');
 
 const REDDIT_POST_LIMIT = 100;
 
@@ -9,9 +10,14 @@ const decodeRedditImgUrl = (url) => {
         let baseUrl = url.substr(0, qsStartI);
         let qsUrl = url.substr(qsStartI + 1);
         let qs = querystring.decode(qsUrl);
-        qs["s"] = qs["amp;s"];
-        delete qs["amp;s"];
-        console.log("QS: ", JSON.stringify(qs));
+        //remove amp prefix from qs
+        for (let key in qs) {
+            if (key.indexOf('amp;') == 0) {
+                let val = qs[key];
+                delete qs[key];
+                qs[key.substr('amp;'.length)] = val;
+            }
+        }
         if (Object.keys(qs).length > 0) {
             return `${baseUrl}?${querystring.encode(qs)}`;
         }
@@ -23,7 +29,7 @@ const decodeRedditImgUrl = (url) => {
 const getRedditImgData = async (url) => {
     const options = {
         method: 'GET',
-        url: decodeRedditImgUrl(url),
+        url: url,
         encoding: null,
         resolveWithFullResponse: true
     };
@@ -42,10 +48,14 @@ exports.getImgs = async (typeConfig) => {
                 for (let img of post.preview.images) {
                     if (typeConfig.minUpvotes != null && post.ups >= typeConfig.minUpvotes) {
                         let sourceImg = img.source;
+                        //remove invalid querystrings from url
+                        let decodedUrl = decodeRedditImgUrl(sourceImg.url);
                         imgs.push({
                             id: img.id,
-                            getData: getRedditImgData.bind(this, sourceImg.url),
+                            url: decodedUrl,
+                            getData: getRedditImgData.bind(this, decodedUrl),
                             meta: {
+                                name: post.title,
                                 width: sourceImg.width,
                                 height: sourceImg.height
                             }

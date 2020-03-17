@@ -1,13 +1,15 @@
+const _ = require('lodash');
+
 exports.allSuccessfulPromises = async (promises) => {
     let results = Promise.all(_.map(promises, (promise) => {
-        return async () => {
+        return (async () => {
             try {
                 let res = await promise;
                 return { successful: true, value: res, err: null };
             } catch (e) {
                 return { successful: false, value: null, err: e };
             }
-        }
+        })
     }));
     let values = [];
     for (let result of results) {
@@ -26,14 +28,12 @@ exports.getAll = async (refs) => {
         return [];
     }
     
-    let collection = refs[0].parent;
-    let ids = refs.map(ref => ref.id);
-    //in query for matching document ids
-    let querySnapshot = await collection.where(firebase.firestore.FieldPath.documentId(), 'in', ids).get();
-    return querySnapshot.docs;
+    return (await Promise.all(_.map(refs, async (ref) => {
+        return await ref.get();
+    })));
 }
 
-exports.getReqUserID = (req, admin) => {
+exports.getReqUserID = async (req, admin) => {
     if (req.headers.secret != null && req.headers.userID != null) {
         if (req.headers.secret == functions.config().secret) {
             return req.headers.userID;

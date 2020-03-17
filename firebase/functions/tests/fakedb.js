@@ -43,7 +43,7 @@ exports.db1 = {
                 width: 1000
             },
             name: "device1_name",
-            prevWallpapers: [ new DbRef('images', 'image1') ],
+            wallpapers: [ new DbRef('images', 'image1') ],
             targetAspectRatio: {
                 aspectRatio: 1.83,
                 disabled: false,
@@ -59,11 +59,15 @@ exports.db1 = {
                 width: 1000
             },
             name: "device2_name",
-            prevWallpapers: [  ],
+            wallpapers: [ new DbRef('images', 'image1') ],
             targetAspectRatio: {
                 aspectRatio: 1.83,
                 disabled: false,
                 off: 30
+            },
+            sourceImages: {
+                'source1': [ new DbRef('images', 'image2'), new DbRef('images', 'image1') ],
+                'source2': [ new DbRef('images', 'image2') ]
             }
         }
     },
@@ -91,3 +95,4 @@ exports.db1 = {
         }
     }
 };
+
