@@ -154,7 +154,7 @@ exports.pickDeviceWallpaper = functions.https.onRequest(async (req, res) => {
 //execute everyday at 4 am
 exports.updateAllUsers = functions.pubsub.schedule('0 4 * * *')
 .timeZone('US/Pacific') // Users can choose timezone - default is America/Los_Angeles
-.onRun(() => {
+.onRun(async () => {
     const db = admin.firestore();
     await batchUpdateUsers(null, db);
 });

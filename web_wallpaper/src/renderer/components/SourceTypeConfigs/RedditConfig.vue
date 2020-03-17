@@ -9,7 +9,7 @@
             :disabled="disabled || verifying" required></md-input>
             <span class="md-error">{{ subredditErrorMsg }}</span>
         </md-field>
-
+ 
         <md-field>
             <label for="sortBy">Sort By</label>
             <md-select v-model="value.sortBy" name="sortBy" id="sortBy" :disabled="disabled || verifying">
@@ -19,7 +19,7 @@
                 :value="val">{{ key }}</md-option>
             </md-select>
         </md-field>
-
+ 
         <md-field>
             <label for="timeSpan">Time Span</label>
             <md-select v-model="value.timeSpan" name="timeSpan" id="timeSpan" :disabled="(value.sortBy !== sortBys.Top) || disabled || verifying">
@@ -29,7 +29,7 @@
                 :value="val">{{ key }}</md-option>
             </md-select>
         </md-field>
-
+ 
         <md-field>
             <label>MinUpvotes</label>
             <md-input v-model="value.minUpvotes" :disabled="disabled || verifying" type="Number"></md-input>
@@ -43,7 +43,7 @@ const SortBy = {
     Top: "top",
     Hottest: "hottest"
 };
-
+ 
 const TimeSpans = {
     Day: "day",
     Week: "week",
@@ -53,7 +53,7 @@ const TimeSpans = {
 };
  
 export default {
-    name: 'reddit_config',
+    name: 'reddit',
     mounted() {
         this.validateBus.$on("validate", this.onValidate);
     },
@@ -153,5 +153,3 @@ export default {
         width: 20em;
     }
 </style>
- 
- 
