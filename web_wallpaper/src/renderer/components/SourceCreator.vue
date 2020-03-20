@@ -72,6 +72,8 @@ export default {
             sourceID: null,
             source: null,
             isSourceSavable: false,
+            noFaces: true,
+            noText: true,
             saveBus: new Vue()
         }
     },

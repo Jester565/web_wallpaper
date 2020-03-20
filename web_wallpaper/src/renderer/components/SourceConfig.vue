@@ -15,6 +15,28 @@
                         :placeholder="suggestedName"></md-input>
                     </md-field>
                     <like-rater v-model="source.rating" :disabled="saving" />
+                    <div class="md-layout md-alignment-center-center">
+                        <md-button 
+                        :class="{ 'filter-button': true, 'md-raised': true, 'md-primary': !source.noFaces, 'md-accent': source.noFaces }"
+                        @click="source.noFaces = !source.noFaces">
+                            <div class="filter-icon-wrapper">
+                                <md-icon class="md-layout-item md-size-3x filter-icon">face</md-icon>
+                                <md-icon v-if="source.noFaces" class="md-layout-item md-size-3x filter-over-icon">clear</md-icon>
+                                <span class="md-caption">{{((source.noFaces)? 'Excluding': 'Including')}} Faces</span>
+                            </div>
+                            <md-tooltip md-direction="top">Images with faces are currently {{((source.noFaces)? 'not allowed': 'allowed')}}</md-tooltip>
+                        </md-button>
+                        <md-button 
+                        :class="{ 'filter-button': true, 'md-raised': true, 'md-primary': !source.noText, 'md-accent': source.noText }"
+                        @click="source.noText = !source.noText">
+                            <div class="filter-icon-wrapper">
+                                <md-icon class="md-layout-item md-size-3x filter-icon">text_format</md-icon>
+                                <md-icon v-if="source.noText" class="md-layout-item md-size-3x filter-over-icon">clear</md-icon>
+                                <span class="md-caption">{{((source.noText)? 'Excluding': 'Including')}} Text</span>
+                            </div>
+                            <md-tooltip md-direction="top">Images with text are currently {{((source.noText)? 'not allowed': 'allowed')}}</md-tooltip>
+                        </md-button>
+                    </div>
                 </div>
                 <component :is="source.type" 
                 v-model="source.typeConfig" 
@@ -198,6 +220,24 @@ export default {
 
     .field-div {
         margin-left: 4em;
+    }
+
+    .filter-button {
+        margin-left: 10px;
+        margin-right: 10px;
+        min-width: 80px;
+        min-height: 60px;
+    }
+
+    .filter-icon-wrapper {
+        background: transparent;
+    }
+
+    .filter-over-icon {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        color: #FF0000 !important;
     }
 </style>
  
