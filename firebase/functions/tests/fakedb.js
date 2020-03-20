@@ -14,7 +14,7 @@ exports.db1 = {
                     type: 'reddit',
                     typeConfig: {
                         minUpvotes: 0,
-                        sortBy: "hottest",
+                        sortBy: "hot",
                         subreddit: "disneyland",
                         timeSpan: "week"
                     },

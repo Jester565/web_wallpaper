@@ -86,6 +86,8 @@ export default {
                 name: "",
                 rating: 5,
                 type: type,
+                wallpapers: [],
+                sourceImages: {},
                 typeConfig: _.cloneDeep(TypeConsts[type].initConfig)
             }
         },

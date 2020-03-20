@@ -19,52 +19,49 @@ const invokeAddSourceImages = async (userDoc, sourceID) => {
     }
     const options = {
         method: 'POST',
-        url: `${functions.config().func_url}/addSourceImages`,
+        url: `${functions.config().env.func_url}/addSourceImages`,
         headers: {
-            secret: functions.config().secret,
+            secret: functions.config().env.secret,
             userID
         },
-        data: {
+        json: {
             deviceIDs,
             sourceID
         },
-        json: true,
         resolveWithFullResponse: true
     };
-    return await rp(options);
+    return (await rp(options));
 }
 
 const invokePickDeviceWallpaper = async (userID, deviceID) => {
     const options = {
         method: 'POST',
-        url: `${functions.config().func_url}/pickDeviceWallpaper`,
+        url: `${functions.config().env.func_url}/pickDeviceWallpaper`,
         headers: {
-            secret: functions.config().secret,
+            secret: functions.config().env.secret,
             userID
         },
-        data: {
+        json: {
             deviceID
         },
-        json: true,
         resolveWithFullResponse: true
     };
-    return await rp(options);
+    return (await rp(options));
 }
 
 const invokeBatchUpdateUsers = async (startAfterUserID) => {
     const options = {
         method: 'POST',
-        url: `${functions.config().func_url}/batchUpdateUsers`,
+        url: `${functions.config().env.func_url}/batchUpdateUsers`,
         headers: {
-            secret: functions.config().secret
+            secret: functions.config().env.secret
         },
-        data: {
+        json: {
             startAfterUserID
         },
-        json: true,
         resolveWithFullResponse: true
     };
-    return await rp(options);
+    return (await rp(options));
 }
 
 //First update add images to all sources, then select the best wallpaper for each device
@@ -73,7 +70,6 @@ const updateUserWallpapers = async (userDoc) => {
     if (user.sources != null) {
         await Promise.all(_.map(Object.keys(user.sources), async (sourceID) => { await invokeAddSourceImages(userDoc, sourceID) }));
     }
-    console.log("After sources");
     if (user.devices != null) {
         await Promise.all(_.map(user.devices, async (deviceRef) => { await invokePickDeviceWallpaper(userDoc.id, deviceRef.id) }));
     }
@@ -86,8 +82,8 @@ exports.batchUpdateUsers = async (startAfterUserID, db) => {
         userQuery = userQuery.startAfter(startAfterUserID);
     }
     let collectionSnapshot = await userQuery.get();
-    await Promise.all(_.map(collectionSnapshot.docs, (userDoc) => {
-        return updateUserWallpapers(userDoc);
+    await Promise.all(_.map(collectionSnapshot.docs, async (userDoc) => {
+        return await updateUserWallpapers(userDoc);
     }));
     //TODO: Determine if it is better to invoke another function or just leave the current function running
     //only request more if we reached the limit

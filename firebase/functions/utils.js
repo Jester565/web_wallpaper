@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const functions = require('firebase-functions');
 
 exports.allSuccessfulPromises = async (promises) => {
     let results = Promise.all(_.map(promises, (promise) => {
@@ -34,9 +35,9 @@ exports.getAll = async (refs) => {
 }
 
 exports.getReqUserID = async (req, admin) => {
-    if (req.headers.secret != null && req.headers.userID != null) {
-        if (req.headers.secret == functions.config().secret) {
-            return req.headers.userID;
+    if (req.headers.secret != null && req.headers.userid != null) {
+        if (req.headers.secret == functions.config().env.secret) {
+            return req.headers.userid;
         } else {
             throw "Invalid secret";
         }

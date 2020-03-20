@@ -16,9 +16,11 @@ module.exports = class PostStream extends stream.Readable {
         this._age = age;
         this._postI = 0;
         this._lastPostFullName = null;
+        this._requesting = false;
     }
  
     async _getRedditPosts() {
+        this._requesting = true;
         let qs = {
             count: POST_PER_REQ_COUNT,
             after: this._lastPostFullName
@@ -26,14 +28,16 @@ module.exports = class PostStream extends stream.Readable {
         if (this._age != null) {
             qs["t"] = this._age;
         }
-        let posts = await rp({
+        let opts = {
             url: `https://reddit.com/r/${this._subreddit}/${this._sortBy}/.json`,
             method: 'GET',
             qs,
             json: true
-        });
+        };
+        let posts = await rp(opts);
         //If children is empty, the subreddit is out
         if (posts.data.children.length == 0) {
+            this._requesting = false;
             this.push(null);
         }
         posts.data.children.forEach((post, i) => {
@@ -42,14 +46,17 @@ module.exports = class PostStream extends stream.Readable {
                 return;
             }
             this._postI++;
-            this.push(JSON.stringify(post.data), STREAM_FORMAT);
             if (i == posts.data.children.length - 1) {
+                this._requesting = false;
                 this._lastPostFullName = `${post.kind}_${post.data.id}`;
             }
+            this.push(JSON.stringify(post.data), STREAM_FORMAT);
         });
     }
  
     _read() {
-        this._getRedditPosts();
+        if (!this._requesting) {
+            this._getRedditPosts();
+        }
     }
 }

@@ -41,7 +41,7 @@ import axios from 'axios';
 import _ from 'lodash';
 const SortBy = {
     Top: "top",
-    Hottest: "hottest"
+    Hot: "hot"
 };
  
 const TimeSpans = {

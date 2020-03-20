@@ -121,33 +121,37 @@ exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDel
             t.set(userRef, userData);
         });
     } catch (err) {
-        console.error(err);
+        console.log(err);
     }
 });
 
 exports.addSourceImages = functions.https.onRequest(async (req, res) => {
     try {
-        let userID = await getReqUserID(req);
-
         const db = admin.firestore();
+        let userID = await getReqUserID(req, admin);
+
         let deviceIDs = req.body.deviceIDs;
         let sourceID = req.body.sourceID;
         
         await addSourceImages(userID, sourceID, deviceIDs, db);
+        res.status(200).send("Success");
     } catch (err) {
-        console.error(err);
+        console.log(err);
+        res.status(500).send(err);
     }
 });
 
 exports.pickDeviceWallpaper = functions.https.onRequest(async (req, res) => {
     try {
-        let userID = await getReqUserID(req);
         const db = admin.firestore();
+        let userID = await getReqUserID(req, admin);
         let deviceID = req.body.deviceID;
 
         await pickDeviceWallpaper(userID, deviceID, db);
+        res.status(200).send("Success");
     } catch (err) {
-        console.error(err);
+        console.log(err);
+        res.status(500).send(err);
     }
 });
 
@@ -160,10 +164,17 @@ exports.updateAllUsers = functions.pubsub.schedule('0 4 * * *')
 });
 
 exports.batchUpdateUsers = functions.https.onRequest(async (req, res) => {
-    if (req.headers.secret != functions.config().secret) {
-        console.error("Invalid secret!");
-        return;
+    try {
+        if (req.headers.secret != functions.config().env.secret) {
+            console.error("Invalid secret!");
+            res.status(403).send("Invalid secret!");
+            return;
+        }
+        const db = admin.firestore();
+        await batchUpdateUsers(req.body.startAfterUserID, db);
+        res.status(200).send("Success");
+    } catch (err) {
+        console.log(err);
+        res.status(500).send(JSON.stringify(err));
     }
-    const db = admin.firestore();
-    await batchUpdateUsers(req.data.startAfterUserID, db);
 });
