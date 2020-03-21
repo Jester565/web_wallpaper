@@ -15,6 +15,20 @@
                         :placeholder="suggestedName"></md-input>
                     </md-field>
                     <like-rater v-model="source.rating" :disabled="saving" />
+                    <div v-if="devices">
+                        <md-field>
+                            <label for="includedDevicesField">Included Devices</label>
+                            <md-select v-model="includedDevices" name="includedDevicesField" id="includedDevicesField" multiple>
+                                <md-option 
+                                v-for="(deviceName, deviceID) in devices" 
+                                :key="deviceID"
+                                :value="deviceID">{{ deviceName }}</md-option>
+                            </md-select>
+                        </md-field>
+                    </div>
+                    <div v-else>
+                        <md-progress-spinner md-mode="indeterminate"></md-progress-spinner>
+                    </div>
                     <div class="md-layout md-alignment-center-center">
                         <md-button 
                         :class="{ 'filter-button': true, 'md-raised': true, 'md-primary': !source.noFaces, 'md-accent': source.noFaces }"
@@ -58,7 +72,7 @@
 import Vue from 'vue'
 import _ from 'lodash'
 import firestoreHelper from '../utils/firestoreHelper'
-import firebase from 'firebase'
+import firebase, { firestore } from 'firebase'
 import { ConfigComponents as TypeConfigComponents, Consts as TypeConsts } from './SourceTypeConfigs/index'
 import LikeRater from './LikeRater'
 
@@ -67,10 +81,11 @@ const DEFFAULT_RATING = 5;
 export default {
     name: 'source_config',
     props: [ "value", "sourceID", "userID", "saveBus" ],
-    mounted() {
+    async mounted() {
         if (this.saveBus != null) {
             this.saveBus.$on("save", this.onSave);
         }
+        await this.getDevices();
     },
     data() {
         return {
@@ -81,12 +96,41 @@ export default {
             validateBus: new Vue(),
             typeConfigCheckable: false,
             prevIsModified: false,
-            prevCanSave: false
+            prevCanSave: false,
+            devices: null,
+            excludedDevices: null
         }
     },
     computed: {
         sourceType() {
             return (this.source != null)? TypeConsts[this.source.type]: null; 
+        },
+        includedDevices: {
+            get() {
+                console.log("RUNNING COMPUTED DEVICE GET");
+                let included = [];
+                if (this.devices != null) {
+                    for (let deviceID in this.devices) {
+                        if (!this.source.excludedDevices[deviceID]) {
+                            included.push(deviceID);
+                        }
+                    }
+                }
+                return included;
+            },
+            set (included) {
+                console.log("COMPUTED DEVICE SET");
+                let excludedDevices = {};
+                for (let deviceID in this.devices) {
+                    if (included.indexOf(deviceID) < 0) {
+                        excludedDevices[deviceID] = true;
+                    }
+                }
+                //Prevent infinite loop by not updating source value if excludedDevices are the same
+                if (Object.keys(firestoreHelper.getDataDiff(excludedDevices, this.source.excludedDevices)).length > 0) {
+                    this.source.excludedDevices = excludedDevices;
+                }
+            }
         }
     },
     watch: {
@@ -146,6 +190,18 @@ export default {
         onSave() {
             this.saving = true;
             this.validateBus.$emit("validate");
+        },
+        async getDevices() {
+            let userDoc = await firebase
+            .firestore()
+            .collection('users')
+            .doc(this.userID)
+            .get();
+            let deviceDocs = await firestoreHelper.getAll(userDoc.data().devices);
+            this.devices = {};
+            for (let deviceDoc of deviceDocs) {
+                this.devices[deviceDoc.id] = deviceDoc.data().name;
+            }
         },
         async onValidated(valid) {
             if (valid) {

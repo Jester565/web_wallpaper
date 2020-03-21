@@ -90,6 +90,7 @@ export default {
                 type: type,
                 wallpapers: [],
                 sourceImages: {},
+                excludedDevices: {},
                 typeConfig: _.cloneDeep(TypeConsts[type].initConfig)
             }
         },
