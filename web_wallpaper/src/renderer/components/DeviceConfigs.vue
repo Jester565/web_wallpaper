@@ -7,8 +7,8 @@
                 v-for="deviceDoc in devices" 
                 :id="deviceDoc.id"
                 :key="deviceDoc.id" 
-                :md-label="deviceDoc.data().name + ((modifiedDeviceIDs[deviceDoc.id])? '*': '')"
-                :md-icon="(deviceDoc.data().type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON">
+                :md-label="deviceDoc.data().config.name + ((modifiedDeviceIDs[deviceDoc.id])? '*': '')"
+                :md-icon="(deviceDoc.data().config.type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON">
                     <DeviceConfig :deviceID="deviceDoc.id" :userID="userID" :saveBus="saveBus" @modificationChanged="onDeviceModificationChanged(deviceDoc.id, $event)"></DeviceConfig>
                 </md-tab>
             </md-tabs>
@@ -106,7 +106,6 @@ export default {
             this.modifiedDeviceIDs[deviceID] = modified;
         },
         onSave() {
-            console.log("emitted save");
             this.saveBus.$emit("save");  
         },
         onReqClose() {

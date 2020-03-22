@@ -1,6 +1,27 @@
 import firebase from 'firebase'
 import _ from 'lodash'
 
+const cloneDeepKeepRefs = (e) => {
+    //Check if has Firestore reference properties (is there a better way to do this)
+    if (e.firestore && e.path) {
+        return e;
+    } else if (typeof e === 'object') {
+        let newObj = {};
+        for (let key in e) {
+            newObj[key] = cloneDeepKeepRefs(e[key]);
+        }
+        return newObj;
+    } else if (typeof e === 'array') {
+        let newArr= [];
+        for (let i = 0; i < e.length; i++) {
+            newArr[i] = cloneDeepKeepRefs(e[i]);
+        }
+        return newArr;
+    } else {
+        return _.clone(e);
+    }
+}
+
 export default {
     //Get snapshots from array of references
     getAll: async (refs) => {
@@ -16,13 +37,28 @@ export default {
         return querySnapshot.docs;
     },
     getDataDiff: (object, base) => {
-        function changes(object, base) {
-            return _.transform(object, function(result, value, key) {
-                if (!_.isEqual(value, base[key])) {
-                    result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+        function changes(e, base) {
+            return _.transform(e, function(result, value, key) {
+                if (value.path && value.firestore) {
+                    if (base[key].path !== value.path) {
+                        result[key] = value;
+                    }
+                } else if (typeof value === 'object') {
+                    let diff = changes(value, base[key]);
+                    if (Object.keys(diff).length > 0) {
+                        result[key] = diff;
+                    }
+                } else if (typeof value === 'array') {
+                    let diff = changes(value, base[key]);
+                    if (diff.length > 0) {
+                        result[key] = diff;
+                    }
+                } else if (!_.isEqual(value, base[key])) {
+                    result[key] = value;
                 }
             });
         }
         return changes(object, base);
-    }
+    },
+    cloneDeepKeepRefs
 }

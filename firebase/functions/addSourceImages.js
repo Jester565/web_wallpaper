@@ -23,15 +23,15 @@ const removeUsedImgs = async (imgs, deviceDocs) => {
  
 //Determine if the device is interested in getting the vision data for this image or if we can already discard it
 const shouldGetVision = (img, device) => {
-    if (!device.minRes.disabled) {
-        if (img.meta.width < device.minRes.width || img.meta.height < device.minRes.height) {
+    if (!device.config.minRes.disabled) {
+        if (img.meta.width < device.config.minRes.width || img.meta.height < device.config.minRes.height) {
             return false;
         }
     }
-    if (!device.targetAspectRatio.disabled) {
+    if (!device.config.targetAspectRatio.disabled) {
         let imgAspectRatio = img.meta.width / img.meta.height;
-        if ((imgAspectRatio < device.targetAspectRatio.aspectRatio * (device.targetAspectRatio.off / 100.0))
-            || (imgAspectRatio > device.targetAspectRatio.aspectRatio * (device.targetAspectRatio.off / 100.0 + 1.0))) {
+        if ((imgAspectRatio < device.config.targetAspectRatio.aspectRatio * (device.config.targetAspectRatio.off / 100.0))
+            || (imgAspectRatio > device.config.targetAspectRatio.aspectRatio * (device.config.targetAspectRatio.off / 100.0 + 1.0))) {
             return false;
         }
     }
@@ -173,7 +173,7 @@ exports.addSourceImages = async (userID, sourceID, deviceIDs, db) => {
     imgs = await removeUsedImgs(imgs, sourceDeviceDocs);
  
     let sourceDeviceAspectRatios = _.map(sourceDeviceDocs, (deviceDoc) => {
-        return deviceDoc.data().targetAspectRatio.aspectRatio;
+        return deviceDoc.data().config.targetAspectRatio.aspectRatio;
     });
     //Remove duplicate aspect ratios and sort
     sourceDeviceAspectRatios = _.sortedUniq(sourceDeviceAspectRatios);

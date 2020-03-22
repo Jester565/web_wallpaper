@@ -1,16 +1,16 @@
 <template> 
     <div>
         <br />
-        <div v-if="localDevice" class="device-div">
-            <wallpaper-carousel :wallpapers="localDevice.prevWallpapers" />
+        <div v-if="localConfig" class="device-div">
+            <wallpaper-carousel v-if="remoteDevice.wallpapers" :wallpapers="remoteDevice.wallpapers" />
             <div class="config-div">
                 <div class="md-layout md-alignment-center-space-between">
                     <span class="md-headline md-layout-item">Configurations</span>
                     <div class="md-layout-item save-div">
-                        <md-button class="md-icon-button" @click="onSave" :disabled="!isLocalDeviceModified">
+                        <md-button class="md-icon-button" @click="onSave" :disabled="!isLocalConfigModified">
                             <md-icon>save</md-icon>
                         </md-button>
-                        <md-button class="md-icon-button" @click="showRevertDialog = true" :disabled="!isLocalDeviceModified">
+                        <md-button class="md-icon-button" @click="showRevertDialog = true" :disabled="!isLocalConfigModified">
                             <md-icon>undo</md-icon>
                         </md-button>
                     </div>
@@ -18,7 +18,7 @@
                 <div>
                     <md-field>
                         <label>Name</label>
-                        <md-input v-model="localDevice.name"></md-input>
+                        <md-input v-model="localConfig.name"></md-input>
                     </md-field>
                 </div>
                 <div>
@@ -26,12 +26,12 @@
                     <div class="md-layout md-alignment-center-left">
                         <md-field class="md-layout-item">
                             <label>Width</label>
-                            <md-input v-model="localDevice.minRes.width"></md-input>
+                            <md-input v-model.number="localConfig.minRes.width"></md-input>
                         </md-field>
                         <p class="md-layout-item md-body-2 res-x">x</p>
                         <md-field class="md-layout-item">
                             <label>Height</label>
-                            <md-input v-model="localDevice.minRes.height"></md-input>
+                            <md-input v-model.number="localConfig.minRes.height"></md-input>
                         </md-field>
                     </div>
                 </div>
@@ -40,57 +40,61 @@
                     <div class="md-layout md-alignment-center-space-between">
                         <span class="md-title md-layout-item">Crop Limits</span>
                         <md-button 
-                        v-if="!localDevice.targetAspectRatio.disabled"
-                        @click="$set(localDevice.targetAspectRatio, 'disabled', true)"
+                        v-if="!localConfig.targetAspectRatio.disabled"
+                        @click="$set(localConfig.targetAspectRatio, 'disabled', true)"
                         class="md-primary">
                             Disable
                         </md-button>
                         <md-button 
                         v-else
-                        @click="$set(localDevice.targetAspectRatio, 'disabled', false)"
+                        @click="$set(localConfig.targetAspectRatio, 'disabled', false)"
                         class="md-primary">
                             Enable
                         </md-button>
                     </div>
                     <div
                     class="md-layout md-alignment-center-left" 
-                    :class="{ disabled: localDevice.targetAspectRatio.disabled }">
+                    :class="{ disabled: localConfig.targetAspectRatio.disabled }">
                         <md-field class="md-layout-item side-by-side-left">
                             <label>Aspect Ratio</label>
-                            <md-input :disabled="localDevice.targetAspectRatio.disabled" v-model="localDevice.targetAspectRatio.aspectRatio"></md-input>
+                            <md-input 
+                            :disabled="localConfig.targetAspectRatio.disabled" 
+                            v-model.number="localConfig.targetAspectRatio.aspectRatio"></md-input>
                         </md-field>
                         <md-field class="md-layout-item side-by-side-right">
                             <label>Allow Aspect Ratios Off By</label>
-                            <md-input :disabled="localDevice.targetAspectRatio.disabled" v-model="localDevice.targetAspectRatio.off"></md-input>
+                            <md-input 
+                            :disabled="localConfig.targetAspectRatio.disabled" 
+                            v-model.number="localConfig.targetAspectRatio.off"></md-input>
                             <span class="md-suffix">%</span>
                         </md-field>
                     </div>
                 </div>
                 <!--v-if temporary as all devices should have target color -->
-                <div v-if="localDevice.targetColor">
+                <div v-if="localConfig.targetColor">
                     <!--$set used to add new props to data and trigger rerender-->
                     <div class="md-layout md-alignment-center-space-between">
                         <span class="md-title md-layout-item">Color</span>
                         <md-button 
-                        v-if="!localDevice.targetColor.disabled"
-                        @click="$set(localDevice.targetColor, 'disabled', true)"
+                        v-if="!localConfig.targetColor.disabled"
+                        @click="$set(localConfig.targetColor, 'disabled', true)"
                         class="md-primary">
                             Disable
                         </md-button>
                         <md-button 
                         v-else
-                        @click="$set(localDevice.targetColor, 'disabled', false)"
+                        @click="$set(localConfig.targetColor, 'disabled', false)"
                         class="md-primary">
                             Enable
                         </md-button>
                     </div>
                     <div
                     class="md-layout md-alignment-center-left" 
-                    :class="{ disabled: localDevice.targetColor.disabled }">
+                    :class="{ disabled: localConfig.targetColor.disabled }">
                         <color-picker 
-                        :color.sync="localDevice.targetColor.color" 
-                        :off.sync="localDevice.targetColor.off" 
-                        :disabled="localDevice.targetColor.disabled"
+                        :color.sync="localConfig.targetColor.color" 
+                        :off.sync="localConfig.targetColor.off" 
+                        :disabled="localConfig.targetColor.disabled"
                          />
                     </div>
                 </div>
@@ -139,14 +143,13 @@ export default {
         return {
             //may need to check for null
             remoteDevice: null,
-            localDevice: null,
+            localConfig: null,
             showRevertDialog: false,
-            prevIsLocalDeviceModified: false
+            prevIsLocalConfigModified: false
         }
     },
     mounted() {
         if (this.saveBus != null) {
-            console.log("linked save");
             this.saveBus.$on('save', this.onSave);
         }
     },
@@ -155,30 +158,31 @@ export default {
             immediate: true,
             //If remoteDevice is updated, replace local device values that weren't modified
             handler (remoteDevice, prevDevice) {
-                if (this.localDevice != null) {
-                    _.assignWith(this.localDevice, remoteDevice, (localVal, remoteVal, key) => {
+                if (this.localConfig != null) {
+                    _.assignWith(this.localConfig, remoteDevice.config, (localVal, remoteVal, key) => {
                         if (localVal !== prevDevice[key]) {
                             return localVal;
                         } else {
                             return remoteVal;
                         }
                     });
-                } else {
-                    this.localDevice = _.cloneDeep(remoteDevice);
+                } else if (remoteDevice) {
+                    this.localConfig = firestoreHelper.cloneDeepKeepRefs(remoteDevice.config);
                 }
             }
         }
     },
     computed: {
-        isLocalDeviceModified() {
-            let modifiedData = firestoreHelper.getDataDiff(this.localDevice, this.remoteDevice);
+        isLocalConfigModified() {
+            let modifiedData = firestoreHelper.getDataDiff(this.localConfig, this.remoteDevice.config);
+            console.log("MODIFIED DATA: ", JSON.stringify(modifiedData));
             //only save if data was modified
-            let isDeviceModified = !_.isEqual(this.localDevice, this.remoteDevice);
-            if (this.prevIsLocalDeviceModified !== isDeviceModified) {
-                this.prevIsLocalDeviceModified = isDeviceModified;
-                this.$emit('modificationChanged', isDeviceModified);
+            let isConfigModified = Object.keys(modifiedData).length > 0;
+            if (this.prevIsLocalConfigModified !== isConfigModified) {
+                this.prevIsLocalConfigModified = isConfigModified;
+                this.$emit('modificationChanged', isConfigModified);
             }
-            return isDeviceModified;
+            return isConfigModified;
         }
     },
     beforeDestroy() {
@@ -187,16 +191,14 @@ export default {
     },
     methods: {
         setAspectRatioMode(disabled) {
-            this.localDevice.targetAspectRatio.disabled = disabled;
+            this.localConfig.targetAspectRatio.disabled = disabled;
             this.$forceUpdate();
         },
         async onSave() {
-            console.log("ON SAVE CALLED");
-            let modifiedData = firestoreHelper.getDataDiff(this.localDevice, this.remoteDevice);
+            let modifiedData = firestoreHelper.getDataDiff(this.localConfig, this.remoteDevice.config);
             if (Object.keys(modifiedData).length > 0) {
-                console.log("KEY PASSED");
                 let prevRemoteDevice = this.remoteDevice;
-                this.remoteDevice = _.cloneDeep(this.localDevice);
+                this.remoteDevice.config = _.cloneDeep(this.localConfig);
                 try {
                     await firebase
                     .firestore()
@@ -209,7 +211,7 @@ export default {
             }
         },
         onRevert() {
-            this.localDevice = _.cloneDeep(this.remoteDevice);
+            this.localConfig = _.cloneDeep(this.remoteDevice.config);
         }
     },
     components: { 'wallpaper-carousel': WallpaperCarousel, 'color-picker': ColorPicker }

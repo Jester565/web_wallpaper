@@ -9,8 +9,8 @@
                 v-if="deviceData" 
                 class="md-raised dark-button" 
                 v-on:click="showDevices()">
-                    <md-icon class="button-icon">{{ (deviceData.type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON }}</md-icon>
-                    {{ deviceData.name }}
+                    <md-icon class="button-icon">{{ (deviceData.config.type == PC_DEVICE_TYPE)? PC_ICON: MOBILE_ICON }}</md-icon>
+                    {{ deviceData.config.name }}
                 </md-button>
                 <md-button class="md-raised log-out dark-button" v-on:click="logOut()">Log Out</md-button>
             </div>
@@ -57,19 +57,22 @@ const addDefaultDevice = async (deviceID, userID) => {
     let aspectRatio = Math.round((width / height) * 100) / 100;
     let deviceData = {
         userID: userID,
-        type: THIS_DEVICE_TYPE,
-        minRes: { width, height },
-        name: hostname,
-        prevWallpapers: [],
-        targetAspectRatio: {
-            aspectRatio,
-            off: DEFAULT_ASPECT_RATIO_OFF,
-            disabled: false
-        },
-        targetColor: {
-            color: DEFAULT_COLOR,
-            off: DEFAULT_COLOR_OFF,
-            disabled: true
+        wallpapers: [],
+        sourceImages: {},
+        config: {
+            name: hostname,
+            type: THIS_DEVICE_TYPE,
+            minRes: { width, height },
+            targetAspectRatio: {
+                aspectRatio,
+                off: DEFAULT_ASPECT_RATIO_OFF,
+                disabled: false
+            },
+            targetColor: {
+                color: DEFAULT_COLOR,
+                off: DEFAULT_COLOR_OFF,
+                disabled: true
+            }
         }
     };
 

@@ -107,7 +107,6 @@ export default {
         },
         includedDevices: {
             get() {
-                console.log("RUNNING COMPUTED DEVICE GET");
                 let included = [];
                 if (this.devices != null) {
                     for (let deviceID in this.devices) {
@@ -200,7 +199,7 @@ export default {
             let deviceDocs = await firestoreHelper.getAll(userDoc.data().devices);
             this.devices = {};
             for (let deviceDoc of deviceDocs) {
-                this.devices[deviceDoc.id] = deviceDoc.data().name;
+                this.devices[deviceDoc.id] = deviceDoc.data().config.name;
             }
         },
         async onValidated(valid) {
