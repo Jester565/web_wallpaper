@@ -39,7 +39,7 @@ export default {
     getDataDiff: (object, base) => {
         function changes(e, base) {
             return _.transform(e, function(result, value, key) {
-                if (value.path && value.firestore) {
+                if (value != null && value.path && value.firestore) {
                     if (base[key].path !== value.path) {
                         result[key] = value;
                     }

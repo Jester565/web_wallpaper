@@ -14,7 +14,7 @@ const invokeAddSourceImages = async (userDoc, sourceID) => {
     if (excludedDevices != null) {
         //Remove excludedDevices
         deviceIDs = _.filter(deviceIDs, (deviceID) => {
-            return excludedDevices.indexOf(deviceID) < 0;
+            return !excludedDevices[deviceID];
         });
     }
     const options = {

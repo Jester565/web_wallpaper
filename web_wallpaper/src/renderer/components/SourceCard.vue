@@ -3,7 +3,15 @@
         <md-card class="md-elevation-14 source-card" @click.native="configOpen = true">
             <md-card-media-cover md-solid>
                 <md-card-media md-ratio="4:3">
-                    <img class="source-img" src="/static/new_source.webp" alt="Sources">
+                    <div v-if="thumbnail">
+                        <img class="source-img" :src="thumbnail.url" alt="Sources">
+                    </div>
+                    <div v-else-if="device && thumbnailID == null">
+                        <img class="source-img" src="/static/new_source.webp" alt="Sources">
+                    </div>
+                    <div v-else>
+                        <md-progress-spinner md-mode="indeterminate"></md-progress-spinner>
+                    </div>
                 </md-card-media>
                 <md-card-area>
                     <md-card-header>
@@ -11,7 +19,7 @@
                             <md-icon 
                             v-if="sourceTypeConsts != null"
                             class="md-layout-item md-size-3x" 
-                            :md-src="sourceTypeConsts.icon"  />
+                            :md-src="sourceTypeConsts.icon" />
                             <span class="md-layout-item md-title">{{source.name}}</span>
                         </div>
                     </md-card-header>
@@ -20,6 +28,11 @@
         </md-card>
         <md-dialog :md-active.sync="configOpen">
             <md-dialog-title>{{source.name}}</md-dialog-title>
+            <wallpaper-carousel 
+            :wallpapers="(device && device.sourceImages)? ((device.sourceImages[sourceID])? device.sourceImages[sourceID]: []): null"
+            :canAdd="true"
+            :adding="addingImage"
+            @onAdd="onAddImage()" />
             <source-config 
             class="source-config"
             :value="source"
@@ -50,14 +63,18 @@
 <script>
 import Vue from 'vue'
 import { Consts as SourceTypeConsts } from './SourceTypeConfigs/index'
+import { API_URL } from '../utils/constants'
+import firebase from 'firebase'
 import WallpaperCarousel from './WallpaperCarousel'
 import SourceConfig from './SourceConfig'
 import DeviceHelper from '../utils/deviceHelper'
+import Axios from 'axios'
  
 export default {
     name: 'source_card',
     async created() { 
         await this.setDeviceID();
+        this.subscribeToDevice();
     },
     props: {
         userID: {
@@ -76,11 +93,15 @@ export default {
     data() {
         return {
             deviceID: null,
+            device: null,
             configOpen: false,
             showCloseDialog: false,
             sourceModified: false,
             canSave: false,
-            saveBus: new Vue()
+            saveBus: new Vue(),
+            addingImage: false,
+            thumbnailID: null,
+            thumbnail: null
         }
     },
     computed: {
@@ -91,9 +112,32 @@ export default {
             return (this.source != null)? SourceTypeConsts[this.source.type]: null
         }
     },
+    beforeDestory() {
+        if (this.unsubscribeFromDevice) {
+            this.unsubscribeFromDevice();
+        }
+    },
     methods: {
         async setDeviceID() {
             this.deviceID = await DeviceHelper.getThisDeviceID(this.userID);
+        },
+        subscribeToDevice() {
+             this.unsubscribeFromDevice = firebase
+            .firestore()
+            .collection('devices').doc(this.deviceID)
+            .onSnapshot(async (snapshot) => {
+                this.device = snapshot.data();
+                if (this.device.sourceImages) {
+                    let images = this.device.sourceImages[this.sourceID];
+                    if (images && images.length > 0) {
+                        if (this.thumbnailID != images[0].id) {
+                            this.thumbnailID = images[0].id;
+                            let thumbnailDoc = await images[0].get();
+                            this.thumbnail = thumbnailDoc.data();
+                        }
+                    }
+                }
+            });
         },
         onSave() {
             this.saveBus.$emit("save");  
@@ -104,6 +148,20 @@ export default {
             } else {
                 this.configOpen = false;
             }
+        },
+        async onAddImage() {
+            let idToken = await firebase.auth().currentUser.getIdToken();
+            //Add one image for this source
+            this.addingImage = true;
+            await Axios.post(`${API_URL}/addSourceImages`, {
+                deviceIDs: [this.deviceID],
+                sourceID: this.sourceID
+            }, {
+                headers: {
+                    authorization: `Bearer ${idToken}`
+                }
+            });
+            this.addingImage = false;
         }
     },
     components: { 'source-config': SourceConfig, 'wallpaper-carousel': WallpaperCarousel }
