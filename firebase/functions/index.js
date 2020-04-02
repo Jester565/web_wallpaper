@@ -55,10 +55,6 @@ exports.removeUserDoc = functions.auth.user().onDelete(async (user) => {
         let userRef = db.collection('users').doc(user.uid);
         let userDoc = await userRef.get();
         let userData = userDoc.data();
-        //Delete all user's source images
-        let imageDeletionPromises = [];
-        //TODO: Remove device images
-        await Promise.all(imageDeletionPromises);
 
         //Delete all user's devices
         let deviceDeletionPromises = [];
@@ -113,9 +109,7 @@ exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDel
                 
                 if (source.excludedDevices) {
                     //No longer exclude deleted device
-                    _.remove(source.excludedDevices, {
-                        id: deviceID
-                    });
+                    delete source.excludedDevices[deviceID];
                 }
             }
             t.set(userRef, userData);
@@ -123,6 +117,78 @@ exports.deviceDeleted = functions.firestore.document('devices/{deviceID}').onDel
     } catch (err) {
         console.log(err);
     }
+});
+
+const removeImageFromDevice = async (deviceRef, imageID) => {
+    let deviceDoc = await deviceRef.get();
+    let newWallpapers = null;
+    if (deviceDoc.data().wallpapers != null) {
+        let removedElms = _.remove(deviceDoc.data().wallpapers, {
+            id: imageID
+        });
+        if (removedElms.length > 0) {
+            newWallpapers = deviceDoc.data().wallpapers;
+        }
+    }
+    let newSourceImages = null;
+    if (deviceDoc.data().sourceImages) {
+        for (let sourceID in deviceDoc.data().sourceImages) {
+            let images = deviceDoc.data().sourceImages[sourceID];
+            let removedElms = _.remove(images, {
+                id: imageID
+            });
+            if (removedElms.length > 0) {
+                if (newSourceImages == null) {
+                    newSourceImages = {};
+                }
+                newSourceImages[sourceID] = images;
+            }
+        }
+    }
+    if (newWallpapers || newSourceImages) {
+        let newDevice = {};
+        if (newWallpapers) {
+            newDevice['wallpapers'] = newWallpapers;
+        }
+        if (newSourceImages) {
+            newDevice['sourceImages'] = newSourceImages;
+        }
+        await deviceRef.set(newDevice, { merge: true });
+    }
+}
+
+//Remove image from devices belonging to owner
+//WARNING: Possible dangling ref if another user (TODO: Change userIDs to map or make images unique to user)
+exports.onImageDeleted = functions.firestore.document('images/{imageID}').onDelete(async (image, ctx) => {
+    try {
+        const db = admin.firestore();
+        let userID = image.data().userID;
+        let imageID = ctx.params.imageID;
+        let userRef = db.collection('users').doc(userID);
+        let userDoc = await userRef.get();
+        let devicePromises = _.map(userDoc.devices, async (deviceRef) => {
+            return (await removeImageFromDevice(deviceRef, imageID));
+        });
+        await devicePromises;
+    } catch (err) {
+        console.log(err);
+    }
+});
+
+//Delete all images older than x days
+const NUM_DAYS_EXPIRATION = 30;
+exports.removeExpiredImages = functions.pubsub.schedule('0 4 * * *')
+.timeZone('US/Pacific')
+.onRun(async () => {
+    const db = admin.firestore();
+    var expirationDate = new Date();
+    expirationDate.setDate(d.getDate() - NUM_DAYS_EXPIRATION);
+    let expirationEpoch = expirationDate.getTime();
+    let queryRes = db.collection('images').where('setTime', '<', expirationEpoch);
+    let deletePromises = _.map(queryRes.docs, async (docSnap) => {
+        return (await docSnap.ref.delete());
+    });
+    await deletePromises;
 });
 
 exports.addSourceImages = functions.https.onRequest(async (req, res) => {

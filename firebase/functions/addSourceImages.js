@@ -119,13 +119,14 @@ const getNumTexts = (visionData, imgW, imgH) => {
 const addImg = async (userID, img, aspectRatios, visionClient, db) => {
     let imgRef = db.collection("images").doc(img.id);
     let imgDoc = await imgRef.get();
-    if (!imgDoc.exists) { 
+    if (!imgDoc.exists) {
         let visionData = await getVisionData(img, aspectRatios, visionClient);
         await db.collection("images")
         .doc(img.id)
         .set({
             userID,
             url: img.url,
+            setTime: Date.now(),
             //optional data
             imgLocation: (img.meta.imgLocation)? img.meta.imgLocation: null,
             name: (img.meta.name)? img.meta.name: null,
