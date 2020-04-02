@@ -23,8 +23,10 @@ jest.mock('firebase-functions', () => {
     return {
         config() {
             return { 
-                secret: 'shh...secret',
-                func_url: 'funcurl'
+                env: {
+                    secret: 'shh...secret',
+                    func_url: 'funcurl'
+                }
             }
         }
     }

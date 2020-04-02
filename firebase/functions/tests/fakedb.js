@@ -38,33 +38,37 @@ exports.db1 = {
     },
     'devices': {
         'device1': {
-            minRes: {
-                height: "500",
-                width: 1000
+            config: {
+                minRes: {
+                    height: "500",
+                    width: 1000
+                },
+                name: "device1_name",
+                targetAspectRatio: {
+                    aspectRatio: 1.83,
+                    disabled: false,
+                    off: 30
+                }
             },
-            name: "device1_name",
             wallpapers: [ new DbRef('images', 'image1') ],
-            targetAspectRatio: {
-                aspectRatio: 1.83,
-                disabled: false,
-                off: 30
-            },
             sourceImages: {
                 'source1': [ new DbRef('images', 'image1') ]
             }
         },
         'device2': {
-            minRes: {
-                height: "500",
-                width: 1000
+            config: {
+                minRes: {
+                    height: "500",
+                    width: 1000
+                },
+                name: "device2_name",
+                targetAspectRatio: {
+                    aspectRatio: 1.83,
+                    disabled: false,
+                    off: 30
+                }
             },
-            name: "device2_name",
             wallpapers: [ new DbRef('images', 'image1') ],
-            targetAspectRatio: {
-                aspectRatio: 1.83,
-                disabled: false,
-                off: 30
-            },
             sourceImages: {
                 'source1': [ new DbRef('images', 'image2'), new DbRef('images', 'image1') ],
                 'source2': [ new DbRef('images', 'image2') ]
