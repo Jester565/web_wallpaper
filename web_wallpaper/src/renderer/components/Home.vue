@@ -16,9 +16,13 @@
             </div>
         </div>
         <div class="parallax-wrapper fullw">
+            <!--
             <parallax>
                 <img src="static/bg.jpg" alt="Your Current Wallpaper"> 
             </parallax>
+            -->
+            <wallpaper-carousel 
+            :wallpapers="(deviceData)? deviceData.wallpapers: null" />
         </div>
         <div class="fullw">
             <source-cards :userID="user.uid" />
@@ -37,9 +41,10 @@ import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
 import Parallax from "vue-parallaxy"
 import IpcHelper from "../utils/ipcHelper"
-import DeviceHelper  from "../utils/deviceHelper";
+import DeviceHelper  from "../utils/deviceHelper"
 import DeviceConfigs from "./DeviceConfigs"
 import SourceCards from "./SourceCards"
+import WallpaperCarousel from './WallpaperCarousel'
 
 const getDeviceDoc = async (deviceID) => {
     let deviceDoc = await firebase
@@ -118,7 +123,7 @@ export default {
             firebase.auth().signOut();
         }  
     },
-    components: { Parallax, DeviceConfigs, "source-cards": SourceCards }
+    components: { Parallax, DeviceConfigs, "source-cards": SourceCards, "wallpaper-carousel": WallpaperCarousel }
 };
 </script>
 

@@ -1,8 +1,8 @@
 <template> 
     <div>
         <br />
+        <wallpaper-carousel v-if="remoteDevice && remoteDevice.wallpapers" :wallpapers="remoteDevice.wallpapers" />
         <div v-if="localConfig" class="device-div">
-            <wallpaper-carousel v-if="remoteDevice.wallpapers" :wallpapers="remoteDevice.wallpapers" />
             <div class="config-div">
                 <div class="md-layout md-alignment-center-space-between">
                     <span class="md-headline md-layout-item">Configurations</span>
@@ -246,7 +246,7 @@ export default {
 
     .device-div {
         overflow-y: scroll;
-        height: 45vh;
+        height: 35vh;
         width: 100%;
         padding-right: 18px;
     }

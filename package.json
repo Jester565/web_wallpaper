@@ -10,6 +10,7 @@
     "request-promise": "^4.2.4",
     "requests": "^0.3.0",
     "sharp": "^0.23.4",
+    "vueperslides": "^2.8.3",
     "wallpaper": "^4.4.1"
   },
   "devDependencies": {

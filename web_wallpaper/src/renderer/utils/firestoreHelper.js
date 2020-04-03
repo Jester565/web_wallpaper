@@ -34,7 +34,14 @@ export default {
         let ids = refs.map(ref => ref.id);
         //in query for matching document ids
         let querySnapshot = await collection.where(firebase.firestore.FieldPath.documentId(), 'in', ids).get();
-        return querySnapshot.docs;
+        
+        //Sort to order references were passed in
+        let idsIndex = {};
+        for (let i = 0; i < ids.length; i++) {
+            idsIndex[ids[i]] = i;
+        }
+        let docs = _.sortBy(querySnapshot.docs, (doc) => idsIndex[doc.id]);
+        return docs;
     },
     getDataDiff: (object, base) => {
         function changes(e, base) {

@@ -91,6 +91,8 @@ export default {
                 wallpapers: [],
                 sourceImages: {},
                 excludedDevices: {},
+                noFaces: false,
+                noText: false,
                 typeConfig: _.cloneDeep(TypeConsts[type].initConfig)
             }
         },

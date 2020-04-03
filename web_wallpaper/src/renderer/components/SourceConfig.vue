@@ -268,7 +268,7 @@ export default {
 
     .config-div {
         overflow-y: scroll;
-        height: 45vh;
+        height: 35vh;
         width: 100%;
         padding-right: 18px;
     }
