@@ -16,11 +16,6 @@
             </div>
         </div>
         <div class="parallax-wrapper fullw">
-            <!--
-            <parallax>
-                <img src="static/bg.jpg" alt="Your Current Wallpaper"> 
-            </parallax>
-            -->
             <wallpaper-carousel 
             :wallpapers="(deviceData)? deviceData.wallpapers: null" />
         </div>
@@ -111,17 +106,30 @@ export default {
             //Add device with default config if new
             this.deviceData = await addDefaultDevice(deviceID, this.user.uid);
         }
+        this.subscribeToDevice(deviceID);
     },
-    methods: {
+    beforeDestroy() {
+        if (this.unsubscribeFromDevice) {
+            this.unsubscribeFromDevice();
+        }
+    }
+    ,methods: {
         showDevices() {
             this.devicesOpen = true;
+        },
+        subscribeToDevice(deviceID) {
+            this.unsubscribeFromDevice = firebase.firestore()
+            .collection('devices').doc(deviceID)
+            .onSnapshot((snapshot) => {
+                this.deviceData = snapshot.data();
+            });
         },
         hideDevices() {
             this.devicesOpen = false;
         },
         logOut() { 
             firebase.auth().signOut();
-        }  
+        } 
     },
     components: { Parallax, DeviceConfigs, "source-cards": SourceCards, "wallpaper-carousel": WallpaperCarousel }
 };
