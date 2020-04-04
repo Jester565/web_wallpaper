@@ -42,7 +42,7 @@ There are two major components to the app: sources and devices.  Sources are pla
 - [X] Show different configuration types
 - [X] Exclude devices
 #### Reddit
-- [ ] Add missing subreddit sorting options (random, hot, etc.)
+- [X] Add missing subreddit sorting options (random, hot, etc.)
 #### Google Photos
 - [ ] Select person, album, or place
 - [ ] Authenticate with API (after login)

@@ -41,7 +41,10 @@ import axios from 'axios';
 import _ from 'lodash';
 const SortBy = {
     Top: "top",
-    Hot: "hot"
+    Hot: "hot",
+    Random: "random",
+    New: "new",
+    Rising: "rising"
 };
  
 const TimeSpans = {

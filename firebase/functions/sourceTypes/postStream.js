@@ -28,25 +28,37 @@ module.exports = class PostStream extends stream.Readable {
         if (this._age != null) {
             qs["t"] = this._age;
         }
+        //temp
+        console.log("URL: ", `https://reddit.com/r/${this._subreddit}/${this._sortBy}/.json`);
         let opts = {
             url: `https://reddit.com/r/${this._subreddit}/${this._sortBy}/.json`,
             method: 'GET',
             qs,
             json: true
         };
-        let posts = await rp(opts);
+        let resp = await rp(opts);
+        
+        let posts = [];
+        //Two possible formats, [ { data: { children: [ POSTS ] } } ] or { data: { children: [ POSTS ] } }
+        if (Array.isArray(resp)) {
+            for (let elm of resp) {
+                posts = posts.concat(posts, elm.data.children);
+            }
+        } else {
+            posts = resp.data.children;
+        }
         //If children is empty, the subreddit is out
-        if (posts.data.children.length == 0) {
+        if (posts.length == 0) {
             this._requesting = false;
             this.push(null);
         }
-        posts.data.children.forEach((post, i) => {
+        posts.forEach((post, i) => {
             if (this._postI >= this._postLimit) {
                 this.push(null);
                 return;
             }
             this._postI++;
-            if (i == posts.data.children.length - 1) {
+            if (i == posts.length - 1) {
                 this._requesting = false;
                 this._lastPostFullName = `${post.kind}_${post.data.id}`;
             }
