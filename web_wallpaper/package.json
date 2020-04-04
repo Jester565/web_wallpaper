@@ -71,7 +71,8 @@
     "vueperslides": "^2.8.3",
     "vuex": "^3.0.1",
     "vuex-electron": "^1.0.0",
-    "wallpaper": "^4.4.1"
+    "wallpaper": "^4.4.1",
+    "windows-shortcuts": "^0.1.6"
   },
   "devDependencies": {
     "ajv": "^6.5.0",

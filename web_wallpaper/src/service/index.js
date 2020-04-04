@@ -83,18 +83,23 @@ const run = async () => {
     let prevRefreshDT = getLastDtAtHour(PULL_HOUR);
     let persistentData = Persistent.getData();
     if (persistentData.wallpaperDate == null || persistentData.wallpaperDate < prevRefreshDT.valueOf()) {
-        console.log("PERSISTENT DATA: ", moment(persistentData.wallpaperDate).tz(Constants.TZ).format());
-        console.log("PREV DT: ", prevRefreshDT.format());
-        await pullWallpaper();
+        try {
+            await pullWallpaper();
+        } catch (err) {
+            console.log("PULL WALLPAPER ERR: ", err);
+        }
     }
     while (true) {
         let nextRefreshDT = getNextDtAtHour(PULL_HOUR);
         let now = moment().tz(Constants.TZ);
         let sleepDuration = (nextRefreshDT.valueOf() - now.valueOf()) + EXTRA_SLEEP_DURATION;
-        console.log("SLEEPING");
         await sleep(sleepDuration);
         await Persistent.initData();
-        await pullWallpaper();
+        try {
+            await pullWallpaper();
+        } catch (err) {
+            console.log("PULL WALLPAPER ERR: ", err);
+        }
     }
 }
 

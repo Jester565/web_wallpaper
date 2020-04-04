@@ -26,19 +26,24 @@ export default {
                 let fileStream = fs.createWriteStream(wallpaperFile);
                 request(wallpaperUrl).pipe(fileStream);
                 fileStream.on('close', async () => {
-                    await Persistent.setData({
-                        wallpaperID,
-                        wallpaperUrl,
-                        wallpaperDate: Date.now()
-                    });
-                    await wallpaper.set(wallpaperFile);
-                    resolve();
+                    try {
+                        await Persistent.setData({
+                            wallpaperID,
+                            wallpaperUrl,
+                            wallpaperDate: Date.now()
+                        });
+                        await wallpaper.set(wallpaperFile);
+                        resolve();
+                    } catch (err) {
+                        console.log("SET WALLPAPER ERR: ", err);
+                        reject(err);
+                    }
                 });
                 fileStream.on('error', async (err) => {
                     reject(err);
                 });
             } catch (err) {
-                console.log("SET WALLPAPER ERR: ", err);
+                console.log("PULL WALLPAPER ERR: ", err);
             }
         });
     }

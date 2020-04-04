@@ -1,9 +1,16 @@
 import { app, BrowserWindow, screen, ipcMain } from 'electron'
 import {machineId} from 'node-machine-id'
 import os from 'os'
-import { Service } from 'node-windows'
 import Persistent from '../nativeCommons/persistent'
 import WallpaperSetter from "../nativeCommons/wallpaperSetter"
+import fs from 'fs'
+import { promisify } from 'util'
+import ws from 'windows-shortcuts'
+import cp from 'child_process'
+import path from 'path'
+__dirname = path.resolve() + "\\src\\main";
+
+const asyncWriteFile = promisify(fs.writeFile);
 
 /**
  * Set `__static` path to static files in production
@@ -53,30 +60,27 @@ const init = async () => {
       mainWindow.webContents.send('wallpaper-id' , persistentData.wallpaperID);
     }
     if (!persistentData.startUpScriptInstalled) {
-      //installStartupScript();
+      await installStartupScript();
     }
   } else {
-    //installStartupScript();
+    await installStartupScript();
   }
-  installStartupScript();
 }
 
-const installStartupScript = () => {
-  console.log("INSTALL STARTUP SCRIPT INVOKED");
-  let svc = new Service({
-    name: 'WebWall',
-    description: 'Sets wallpaper on startup',
-    script: __dirname + '/pullPaper.js',
-    scriptOptions: '--experimental-modules'
+const installStartupScript = async () => {
+  let parentDir = __dirname.substr(0, __dirname.lastIndexOf('\\'));
+  let scriptPath = parentDir + "\\service\\index.js";
+  //Create visual basic script to spawn nodejs background process that polls wallpapers
+  let script = `CreateObject("Wscript.Shell").Run "node --experimental-modules ${scriptPath}", 0`;
+  let startUpExPath = parentDir.substr(0, parentDir.lastIndexOf('\\')) + "\\startup\\webwall.vbs";
+  await asyncWriteFile(startUpExPath, script);
+  //Add shortcut to startup folder
+  ws.create("%APPDATA%/Microsoft/Windows/Start Menu/Programs/WebWall.lnk", startUpExPath);
+  //start background process now
+  cp.spawn("wscript", [startUpExPath]);
+  await Persistent.setData({
+    startUpScriptInstalled: true
   });
-  svc.on('install', async () => {
-    console.log("INSTALLED SERVICE");
-    await Persistent.setData({
-      startUpScriptInstalled: true
-    });
-    svc.start();
-  });
-  svc.install();
 }
 
 app.on('ready', async () => {
