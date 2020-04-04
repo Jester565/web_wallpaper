@@ -4,6 +4,7 @@ const { pickDeviceWallpaper } = require('./pickDeviceWallpaper');
 const { addSourceImages } = require('./addSourceImages');
 const { batchUpdateUsers } = require('./updateUsers');
 const { getReqUserID } = require('./utils');
+const rp = require('request-promise');
 admin.initializeApp();
 
 /*
@@ -181,8 +182,8 @@ exports.removeExpiredImages = functions.pubsub.schedule('0 4 * * *')
 .timeZone('US/Pacific')
 .onRun(async () => {
     const db = admin.firestore();
-    var expirationDate = new Date();
-    expirationDate.setDate(d.getDate() - NUM_DAYS_EXPIRATION);
+    let expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() - NUM_DAYS_EXPIRATION);
     let expirationEpoch = expirationDate.getTime();
     let queryRes = db.collection('images').where('setTime', '<', expirationEpoch);
     let deletePromises = _.map(queryRes.docs, async (docSnap) => {
@@ -239,6 +240,60 @@ exports.batchUpdateUsers = functions.https.onRequest(async (req, res) => {
         const db = admin.firestore();
         await batchUpdateUsers(req.body.startAfterUserID, db);
         res.status(200).send("Success");
+    } catch (err) {
+        console.log(err);
+        res.status(500).send(JSON.stringify(err));
+    }
+});
+
+exports.getWallpaper = functions.https.onRequest(async (req, res) => {
+    try {
+        const db = admin.firestore();
+        let userID = await getReqUserID(req, admin);
+        let deviceID = userID + req.query.machineID;
+        console.log("DEVICE ID: ", deviceID);
+        let deviceDoc = await db.collection('devices').doc(deviceID).get();
+        if (deviceDoc.data().userID != userID) {
+            res.status(403).send("This device does not belong to you");
+            console.log("Unauth for device");
+            return;
+        }
+        if (!deviceDoc.data().wallpapers || deviceDoc.data().wallpapers.length == 0) {
+            res.status(400).send("No wallpaper yet");
+            console.log("No wallpaper");
+            return;
+        }
+        let imageRef = deviceDoc.data().wallpapers[0];
+        let imageDoc = await imageRef.get();
+        res.status(200).send({
+            id: imageDoc.id,
+            ...imageDoc.data()
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).send(JSON.stringify(err));
+    }
+})
+
+exports.exchangeRefreshToken = functions.https.onRequest(async (req, res) => {
+    try {
+        let refreshToken = req.query.refreshToken;
+        let apiKey = functions.config().env.api_key;
+        let tokenResp = await rp({
+            method: 'POST',
+            url: 'https://securetoken.googleapis.com/v1/token',
+            qs: {
+                'key': apiKey,
+            },
+            form: {
+                'grant_type': 'refresh_token',
+                'refresh_token': refreshToken
+            },
+            resolveWithFullResponse: true
+        });
+        let authData = JSON.parse(tokenResp.body);
+        console.log("TOKEN RESP: ", JSON.stringify(authData, null, 4));
+        res.status(200).send(authData);
     } catch (err) {
         console.log(err);
         res.status(500).send(JSON.stringify(err));
