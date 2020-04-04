@@ -1,6 +1,8 @@
 import firebase from 'firebase'
 import _ from 'lodash'
 
+const IN_LIMIT = 10;
+
 const cloneDeepKeepRefs = (e) => {
     //Check if has Firestore reference properties (is there a better way to do this)
     if (e.firestore && e.path) {
@@ -32,16 +34,21 @@ export default {
         
         let collection = refs[0].parent;
         let ids = refs.map(ref => ref.id);
-        //in query for matching document ids
-        let querySnapshot = await collection.where(firebase.firestore.FieldPath.documentId(), 'in', ids).get();
+        //in only supports 10 elements, so we must run multiple queries
+        let idBatches = _.chunk(ids, IN_LIMIT);
+        //Guery all ids
+        let queryResps = await Promise.all(_.map(idBatches, async (idBatch) => {
+            return (await collection.where(firebase.firestore.FieldPath.documentId(), 'in', idBatch).get()).docs;
+        }));
+        //Put all docs into one array
+        let docs = _.flatten(queryResps);
         
         //Sort to order references were passed in
         let idsIndex = {};
         for (let i = 0; i < ids.length; i++) {
             idsIndex[ids[i]] = i;
         }
-        let docs = _.sortBy(querySnapshot.docs, (doc) => idsIndex[doc.id]);
-        return docs;
+        return _.sortBy(docs, (doc) => idsIndex[doc.id]);
     },
     getDataDiff: (object, base) => {
         function changes(e, base) {
