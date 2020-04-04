@@ -5,7 +5,7 @@ import App from './App'
 import router from './router'
 import store from './store'
 import firebase from 'firebase'
-import firebaseui from 'firebaseui'
+import ipcHelper from './utils/ipcHelper'
 import {config} from './config/firebaseConfig'
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
@@ -18,6 +18,12 @@ new Vue({
   router,
   created() {
     firebase.initializeApp(config);
+    firebase.auth().onIdTokenChanged(async (user) => {
+      if (user) {
+        let idToken = await user.getIdToken();
+        ipcHelper.invoke('set-auth', 'set-auth-resp', { idToken, refreshToken: user.refreshToken } );
+      }
+    });
     firebase.auth().onAuthStateChanged((user) => {
       if(user) {
         this.$router.push('/home')

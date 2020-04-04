@@ -30,7 +30,7 @@
 </template>
 <script>
 import Vue from 'vue'
-import { PC_DEVICE_TYPE, MOBILE_ICON, PC_ICON } from '../utils/constants'
+import { PC_DEVICE_TYPE, MOBILE_ICON, PC_ICON } from '../../constants'
 import DeviceConfig from './DeviceConfig'
 import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'

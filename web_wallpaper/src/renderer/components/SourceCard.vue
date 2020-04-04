@@ -63,7 +63,7 @@
 <script>
 import Vue from 'vue'
 import { Consts as SourceTypeConsts } from './SourceTypeConfigs/index'
-import { API_URL } from '../utils/constants'
+import { API_URL } from '../../constants'
 import firebase from 'firebase'
 import WallpaperCarousel from './WallpaperCarousel'
 import SourceConfig from './SourceConfig'

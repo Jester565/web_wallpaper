@@ -114,7 +114,7 @@
     </div>
 </template>
 <script>
-import { PC_DEVICE_TYPE, MOBILE_ICON, PC_ICON } from '../utils/constants'
+import { PC_DEVICE_TYPE, MOBILE_ICON, PC_ICON } from '../../constants'
 import firestoreHelper from '../utils/firestoreHelper'
 import firebase from 'firebase'
 import _ from 'lodash'

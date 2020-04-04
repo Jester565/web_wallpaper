@@ -36,7 +36,7 @@
 const DEFAULT_ASPECT_RATIO_OFF = 30;
 const DEFAULT_COLOR = { r: 0, g: 0, b: 0 };
 const DEFAULT_COLOR_OFF = 30;
-import { THIS_DEVICE_TYPE, PC_DEVICE_TYPE, PC_ICON, MOBILE_ICON } from '../utils/constants'
+import { THIS_DEVICE_TYPE, PC_DEVICE_TYPE, PC_ICON, MOBILE_ICON } from '../../constants'
 import { ipcRenderer } from 'electron'
 import firebase from 'firebase'
 import Parallax from "vue-parallaxy"

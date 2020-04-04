@@ -1,15 +1,9 @@
 import { app, BrowserWindow, screen, ipcMain } from 'electron'
-import {machineId, machineIdSync} from 'node-machine-id'
+import {machineId} from 'node-machine-id'
 import os from 'os'
-import fs from 'fs'
-import { promisify } from 'util'
-import request from 'request'
-import { resolve } from 'dns'
-import wallpaper from 'wallpaper'
-
-const asyncWriteFile = promisify(fs.writeFile);
-const asyncReadFile = promisify(fs.readFile);
-const asyncFileExists = promisify(fs.exists);
+import { Service } from 'node-windows'
+import Persistent from '../nativeCommons/persistent'
+import WallpaperSetter from "../nativeCommons/wallpaperSetter"
 
 /**
  * Set `__static` path to static files in production
@@ -45,66 +39,49 @@ function createWindow () {
   })
 }
 
-const DATA_FILE = 'data.json';
-const WALLPAPER_FILE = 'wallpaper.'
-
-let persistentData = {};
-
-const isUsingWallpaper = async () => {
-  let activeWallpaperPath = await wallpaper.get();
-  let appWallpaperPath = `${__dirname}/${WALLPAPER_FILE}`;
-  return (activeWallpaperPath.indexOf(appWallpaperPath) == 0);
-}
-
-const initData = async () => {
-  let dataPath = `${__dirname}/${DATA_FILE}`;
-  if (await asyncFileExists(dataPath)) {
-    persistentData = JSON.parse(await asyncReadFile(dataPath));
+const init = async () => {
+  let dataExists = await Persistent.initData();
+  if (dataExists) {
+    let persistentData = await Persistent.getData();
     if (persistentData.wallpaperID) {
-      let wallpaperInUse = await isUsingWallpaper();
+      let wallpaperInUse = await WallpaperSetter.isUsingWallpaper();
       if (!wallpaperInUse) {
-        persistentData.wallpaperID = null;
+        await Persistent.setData({
+          wallpaperID: null
+        });
       }
       mainWindow.webContents.send('wallpaper-id' , persistentData.wallpaperID);
     }
-  }
-}
-
-const setWallpaper = (wallpaperID, wallpaperUrl) => {
-  return new Promise((resolve, reject) => {
-    try {
-      let baseUrl = wallpaperUrl;
-      if (wallpaperUrl.indexOf('?') > 0) {
-        baseUrl = wallpaperUrl.substr(0, wallpaperUrl.indexOf('?'));
-      }
-      let fileType = baseUrl.substr(wallpaperUrl.lastIndexOf('.'));
-      let wallpaperFile = `${__dirname}/${WALLPAPER_FILE}.${fileType}`
-      let fileStream = fs.createWriteStream(wallpaperFile);
-      request(wallpaperUrl).pipe(fileStream);
-      fileStream.on('close', async () => {
-        persistentData.wallpaperID = wallpaperID;
-        persistentData.wallpaperUrl = wallpaperUrl;
-        await wallpaper.set(wallpaperFile);
-        await asyncWriteFile(`${__dirname}/${DATA_FILE}`, JSON.stringify(persistentData));
-        mainWindow.webContents.send('wallpaper-id' , wallpaperID);
-        resolve();
-      });
-      fileStream.on('error', async (err) => {
-        persistentData.wallpaperID = null;
-        persistentData.wallpaperUrl = null;
-        await asyncWriteFile(`${__dirname}/${DATA_FILE}`, JSON.stringify(persistentData));
-        mainWindow.webContents.send('wallpaper-id' , null);
-        reject(err);
-      });
-    } catch (err) {
-      console.log("SET WALLPAPER ERR: ", err);
+    if (!persistentData.startUpScriptInstalled) {
+      //installStartupScript();
     }
-  });
+  } else {
+    //installStartupScript();
+  }
+  installStartupScript();
 }
 
-app.on('ready', () => {
+const installStartupScript = () => {
+  console.log("INSTALL STARTUP SCRIPT INVOKED");
+  let svc = new Service({
+    name: 'WebWall',
+    description: 'Sets wallpaper on startup',
+    script: __dirname + '/pullPaper.js',
+    scriptOptions: '--experimental-modules'
+  });
+  svc.on('install', async () => {
+    console.log("INSTALLED SERVICE");
+    await Persistent.setData({
+      startUpScriptInstalled: true
+    });
+    svc.start();
+  });
+  svc.install();
+}
+
+app.on('ready', async () => {
   createWindow();
-  initData();
+  await init();
 })
 
 app.on('window-all-closed', () => {
@@ -120,6 +97,23 @@ app.on('activate', () => {
 })
 
 //Handlers for invocations from the renderer
+ipcMain.on('set-auth', async (event, authData) => {
+  await Persistent.setData({
+    idToken: authData.idToken,
+    refreshToken: authData.refreshToken
+  });
+  event.sender.send('set-auth-resp');
+});
+
+/*
+ipcMain.on('get-auth', async (event) => {
+  let data = Persistent.getData();
+  event.sender.send('auth', {
+    idToken: data.idToken,
+    refreshToken: data.refreshToken
+  });
+});
+*/
 
 //get the resolution of the display
 ipcMain.on('get-resolution', async (event) => {
@@ -139,14 +133,14 @@ ipcMain.on('get-hostname', async (event) => {
 });
 
 ipcMain.on('get-wallpaper-id', async (event) => {
-  let wallpaperID = persistentData.wallpaperID;
+  let data = await Persistent.getData();
+  let wallpaperID = data.wallpaperID;
   event.sender.send('resp-wallpaper-id', wallpaperID);
 });
 
 ipcMain.on('set-wallpaper', async (event, wallpaperData) => {
-  console.log("SETTING WALLPAPER");
   try {
-    await setWallpaper(wallpaperData.id, wallpaperData.url);
+    await WallpaperSetter.setWallpaper(wallpaperData.id, wallpaperData.url);
     event.sender.send('resp-set-wallpaper', wallpaperData.id);
   } catch (err) {
     event.sender.send('resp-set-wallpaper', null);

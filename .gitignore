@@ -2,3 +2,4 @@ node_modules
 db.json
 gauth.json
 web_wallpaper/src/renderer/config/firebaseConfig.js
+data/
