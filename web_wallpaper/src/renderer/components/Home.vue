@@ -1,5 +1,5 @@
 <template> 
-    <div class="fullw">
+    <div class="fullw" v-if="user">
         <div class="md-layout fullw bg top-bar" :class="`md-alignment-center-space-between`">
             <div class="md-layout-item">
                 <span class="md-headline">Hello, {{user.displayName}}</span>
@@ -98,15 +98,17 @@ export default {
     },
     async created() { 
         this.user = firebase.auth().currentUser;
-        let deviceID = await DeviceHelper.getThisDeviceID(this.user.uid);
-        let deviceDoc = await getDeviceDoc(deviceID);
-        if (deviceDoc.exists) {
-            this.deviceData = deviceDoc.data();
-        } else {
-            //Add device with default config if new
-            this.deviceData = await addDefaultDevice(deviceID, this.user.uid);
+        if (this.user) {
+            let deviceID = await DeviceHelper.getThisDeviceID(this.user.uid);
+            let deviceDoc = await getDeviceDoc(deviceID);
+            if (deviceDoc.exists) {
+                this.deviceData = deviceDoc.data();
+            } else {
+                //Add device with default config if new
+                this.deviceData = await addDefaultDevice(deviceID, this.user.uid);
+            }
+            this.subscribeToDevice(deviceID);
         }
-        this.subscribeToDevice(deviceID);
     },
     beforeDestroy() {
         if (this.unsubscribeFromDevice) {

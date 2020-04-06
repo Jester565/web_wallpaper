@@ -142,8 +142,10 @@ export default {
             });
         },
         onUserUpdate(user) {
-            let userData = user.data();
-            this.sources = userData.sources;
+            if (user.exists) {
+                let userData = user.data();
+                this.sources = userData.sources;
+            }
         }
     },
     components: { 'source-creator': SourceCreator, 'source-card': SourceCard }

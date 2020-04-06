@@ -35,7 +35,8 @@ function createWindow () {
     useContentSize: true,
     frame: false,
     webPreferences: {
-      webSecurity: false
+      webSecurity: false,
+      nativeWindowOpen: true
     }
   })
 

@@ -18,16 +18,18 @@ new Vue({
   router,
   created() {
     firebase.initializeApp(config);
+    this.userHasExisted = false;
     firebase.auth().onIdTokenChanged(async (user) => {
       if (user) {
+        this.userHasExisted = true;
         let idToken = await user.getIdToken();
         ipcHelper.invoke('set-auth', 'set-auth-resp', { idToken, refreshToken: user.refreshToken } );
       }
     });
     firebase.auth().onAuthStateChanged((user) => {
       if(user) {
-        this.$router.push('/home')
-      } else {
+        this.$router.push('/home');
+      } else if (!this.userHasExisted) {
         this.$router.push('/landing_page')
       }
      });
