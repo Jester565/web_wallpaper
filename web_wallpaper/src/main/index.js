@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, ipcMain } from 'electron'
+import { app, BrowserWindow, screen, ipcMain, shell } from 'electron'
 import {machineId} from 'node-machine-id'
 import os from 'os'
 import Persistent from '../nativeCommons/persistent'
@@ -8,7 +8,18 @@ import { promisify } from 'util'
 import ws from 'windows-shortcuts'
 import cp from 'child_process'
 import path from 'path'
+import express from 'express'
+import { AUTH_PORT, API_URL } from '../constants'
 __dirname = path.resolve() + "\\src\\main";
+
+const expressApp = express();
+expressApp.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", API_URL);
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+expressApp.use(express.static(__dirname + "\\public"));
+expressApp.listen(5000);
 
 const asyncWriteFile = promisify(fs.writeFile);
 
@@ -36,7 +47,8 @@ function createWindow () {
     frame: false,
     webPreferences: {
       webSecurity: false,
-      nativeWindowOpen: true
+      nativeWindowOpen: true,
+      affinity: 'main-window'
     }
   })
 
@@ -110,15 +122,10 @@ ipcMain.on('set-auth', async (event, authData) => {
   event.sender.send('set-auth-resp');
 });
 
-/*
-ipcMain.on('get-auth', async (event) => {
-  let data = Persistent.getData();
-  event.sender.send('auth', {
-    idToken: data.idToken,
-    refreshToken: data.refreshToken
-  });
+ipcMain.on('g-auth-open', async (event, url) => {
+  shell.openExternal(url);
+  event.sender.send('g-auth-opened');
 });
-*/
 
 //get the resolution of the display
 ipcMain.on('get-resolution', async (event) => {

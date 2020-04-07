@@ -7,6 +7,10 @@ const { getReqUserID } = require('./utils');
 const rp = require('request-promise');
 admin.initializeApp();
 
+const cors = require('cors')({
+    origin: true,
+});
+
 /*
     Adds doc to users collection on user creation
 */
@@ -298,4 +302,39 @@ exports.exchangeRefreshToken = functions.https.onRequest(async (req, res) => {
         console.log(err);
         res.status(500).send(JSON.stringify(err));
     }
+});
+
+exports.addGoogleAuth = functions.https.onRequest(async (req, res) => {
+    return cors(req, res, async () => {
+        try {
+            let userID = await getReqUserID(req, admin);
+            let code = req.body.code;
+            let tokenResp = await rp({
+                method: 'POST',
+                url: 'https://oauth2.googleapis.com/token',
+                form: {
+                    'grant_type': 'authorization_code',
+                    'client_id': functions.config().env.client_id,
+                    'client_secret': functions.config().env.client_secret,
+                    'code': code,
+                    'redirect_uri': functions.config().env.redirect_uri
+                },
+                resolveWithFullResponse: true
+            });
+            let authData = JSON.parse(tokenResp.body);
+            let googleAuth = {
+                accessToken: authData.access_token,
+                refreshToken: authData.refresh_token,
+                expiresAt: authData.expires_in + Date.now()
+            };
+            await admin.firestore().collection('users').doc(userID)
+            .set({
+                googleAuth
+            }, { merge: true });
+            res.send(200);
+        } catch (err) {
+            console.log(err);
+            res.status(500).send(JSON.stringify(err));
+        }
+    });
 });

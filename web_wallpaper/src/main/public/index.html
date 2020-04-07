@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>web_wallpaper</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+      body {
+        background: #111;
+      }
+      .wrapper {
+        background: #222;
+        border-radius: 20px;
+        border: gray solid 3px;
+        text-align: center;
+      }
+      .title {
+        font-size: x-large;
+        color: white;
+      }
+      .text {
+        font-size: large;
+        color: white;
+      }
+      .error-text {
+        font-size: medium;
+        color: #FF8888;
+      }
+      .close-button {
+        background: black;
+        border: greenyellow solid 2px;
+        border-radius: 5px;
+        color: white;
+      }
+      .loader {
+        border: 16px solid #f3f3f3; /* Light grey */
+        border-top: 16px solid #3498db; /* Blue */
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        animation: spin 2s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      let titleDiv = null;
+      let loadDiv = null;
+      let successDiv = null;
+      let errorDiv = null;
+      let errorText = null;
+      
+      function onSignIn() {
+        errorDiv.style.display = 'none';
+        titleDiv.style.display = 'block';
+        let urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has("client_id")) {
+          console.error("Missing client_id in querystring parameters");
+          return;
+        }
+        let clientID = urlParams.get("client_id");
+        if (!urlParams.has("id_token")) {
+          console.error("Missing id_token in querystring parameters");
+          return;
+        }
+        let idToken = urlParams.get("id_token");
+        if (!urlParams.has("api_url")) {
+          console.error("Missing api_url in querystring parameters");
+          return;
+        }
+        let apiUrl = urlParams.get("api_url");
+        window.gapi.load('auth2', async () => {
+            let auth2 = gapi.auth2.init({
+                client_id: clientID
+            });
+            try {
+              let accessResult = await auth2.grantOfflineAccess({
+                  scope: 'https://www.googleapis.com/auth/photoslibrary.readonly'
+              });
+              try {
+                titleDiv.style.display = 'none';
+                loadDiv.style.display = 'block';
+                console.log("ID TOKEN: ", idToken);
+                await fetch(`${apiUrl}/addGoogleAuth`, {
+                  headers: { "Content-Type": "application/json", "authorization": `Bearer ${idToken}` },
+                  method: 'POST',
+                  body: JSON.stringify({
+                    code: accessResult.code
+                  })
+                });
+                loadDiv.style.display = 'none';
+                successDiv.style.display = 'block';
+              } catch (err) {
+                loadDiv.style.display = 'none';
+                errorDiv.sytle.display = 'block';
+                errorText.textContent = err.message;
+                console.error("AddGoogleAuth error: ", err);
+              }
+            } catch (err) {
+              titleDiv.style.display = 'none';
+              errorDiv.sytle.display = 'block';
+              errorText.textContent = err.message;
+              console.error("Offline Access: ", err);
+            }
+        });
+      }
+      window.onload = function() {
+        titleDiv = document.getElementById("titleDiv");
+        loadDiv = document.getElementById("loadDiv");
+        successDiv = document.getElementById("successDiv");
+        errorDiv = document.getElementById("errorDiv");
+        errorText = document.getElementById("errorText");
+        onSignIn();
+      };
+    </script>
+    <div>
+      <div id="titleDiv" class="wrapper">
+        <span class="title">WebWall SignIn Page</span>
+      </div>
+      <div id="loadDiv" class="wrapper" style="display: none;">
+        <span class="text">Saving Credentials</span>
+        <div class="loader"></div>
+      </div>
+      <div id="successDiv" class="wrapper" style="display: none;">
+        <span class="text">All done! WebWall should update with your login soon</span>
+        <button class="close-button" onclick="close()">Close</button>
+      </div>
+      <div id="errorDiv" class="wrapper" style="display: none;">
+        <span id="errorText" class="error-text"></span>
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+      </div>
+    </div>
+  </body>
+</html>

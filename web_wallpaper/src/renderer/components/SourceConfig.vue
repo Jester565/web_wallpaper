@@ -56,6 +56,7 @@
                 v-model="source.typeConfig" 
                 :validateBus="validateBus"
                 :disabled="saving"
+                :userID="userID"
                 @onValidated="onValidated"
                 @checkableChanged="typeConfigCheckable = $event"
                 @suggestedNameChanged="suggestedName=$event" />

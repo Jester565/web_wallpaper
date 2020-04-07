@@ -1,7 +1,17 @@
-<template> 
-    <div class="md-layout fullw" :class="`md-alignment-top-space-around`">
-        <div class="md-layout-item md-size-20">
-            <div id="firebaseui-auth-container"></div>
+<template>
+    <div>
+        <div class="config-div" v-if="hasGoogleAuth">
+            <span class="md-display-1">Refresh Token Detected</span>
+        </div>
+        <div class="config-div" v-if="hasGoogleAuth === false">
+            <span class="md-display-1">Google Permissions Required!</span>
+            <br />
+            <span class="md-headline">Your browser will be opened for sign in</span>
+            <br />
+            <md-button class="md-raised md-accent" @click="launchLogin">Login With Google</md-button>
+        </div>
+        <div class="config-div" v-if="hasGoogleAuth == null">
+            <md-progress-spinner md-mode="indeterminate"></md-progress-spinner>
         </div>
     </div>
 </template>
@@ -11,16 +21,24 @@ import firebaseui from 'firebaseui';
 import axios from 'axios';
 import _ from 'lodash';
 import router from 'vue-router';
-const {getCurrentWindow} = require('electron').remote;
+import ipcHelper from '../../utils/ipcHelper';
+import { AUTH_URL, CLIENT_ID, API_URL } from '../../../constants';
+import querystring from 'querystring';
+const { getCurrentWindow } = require('electron').remote;
 export default {
     name: 'gp_config',
-    props: [ "value", "validateBus", "disabled" ],
-    mounted() {
-        this.linkWithGoogle();
+    props: [ "value", "validateBus", "disabled", "userID" ],
+    created() {
+        let unsubscribeFromUser = firebase.firestore()
+        .collection('users').doc(this.userID)
+        .onSnapshot(this.onUserUpdated);
     },
     data() {
         return {
-           
+           auth2: null,
+           hasGoogleAuth: null,
+           launching: false,
+           launched: false
         }
     },
     computed: {
@@ -29,50 +47,19 @@ export default {
         }
     },
     methods: {
-        async linkWithGoogle() {
-            let googleProviderID = firebase.auth.GoogleAuthProvider.PROVIDER_ID;
-            let prevUser = firebase.auth().currentUser;
-            let uiConfig = {
-            signInOptions: [{
-                provider: googleProviderID,
-                scopes: [ 'https://www.googleapis.com/auth/photoslibrary.readonly' ]
-            }],
-            signInFlow: 'popup',
-            callbacks: {
-                signInSuccessWithAuthResult: (authResult, redirectUrl) => {
-                    let run = async () => {
-                        try {
-                            if (prevUser.uid != firebase.auth().currentUser.uid) {
-                                await firebase.auth().currentUser.delete();
-                                let linkResult = await prevUser.linkWithCredential(authResult.credential);
-                                try {
-                                    await firebase.auth().signInWithCredential(linkResult.credential);
-                                    this.$router.push('/');
-                                    getCurrentWindow().reload();
-                                } catch (err) {
-                                    console.log("LINK SIGN IN ERR: ", err.message);
-                                }
-                            }
-                        } catch (err) {
-                            console.log("LINK ERR: ", err.message);
-                        }
-                    }
-                    run();
-                    return false;
-                },
-                signInFailure: (error) => {
-                    console.log("SIGN IN ERR: ", error);
-                    if (error.code != 'firebaseui/anonymous-upgrade-merge-conflict') {
-                        return Promise.resolve();
-                    }
-                    return false;
-                }
-            }};
-            const orig = firebase.INTERNAL.node;
-            delete firebase.INTERNAL.node;
-            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            let ui = new firebaseui.auth.AuthUI(firebase.auth());
-            ui.start('#firebaseui-auth-container', uiConfig);
+        async onUserUpdated(userData) {
+            this.hasGoogleAuth = (userData.googleAuth != null);
+        },
+        async launchLogin() {
+            let idToken = await firebase.auth().currentUser.getIdToken();
+            console.log("ID TOKEN2: ", idToken);
+            let qs = querystring.stringify({
+                client_id: CLIENT_ID,
+                api_url: API_URL,
+                id_token: idToken
+            });
+            //consider passing client id here
+            await ipcHelper.invoke('g-auth-open', 'g-auth-opened', `${AUTH_URL}?${qs}`);
         }
     }
 };
@@ -81,6 +68,10 @@ export default {
 <style scoped>
     @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
     @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic');
+
+    .config-div {
+        text-align: center;
+    }
 </style>
  
  
