@@ -255,7 +255,6 @@ exports.getWallpaper = functions.https.onRequest(async (req, res) => {
         const db = admin.firestore();
         let userID = await getReqUserID(req, admin);
         let deviceID = userID + req.query.machineID;
-        console.log("DEVICE ID: ", deviceID);
         let deviceDoc = await db.collection('devices').doc(deviceID).get();
         if (deviceDoc.data().userID != userID) {
             res.status(403).send("This device does not belong to you");
@@ -317,7 +316,8 @@ exports.addGoogleAuth = functions.https.onRequest(async (req, res) => {
                     'client_id': functions.config().env.client_id,
                     'client_secret': functions.config().env.client_secret,
                     'code': code,
-                    'redirect_uri': functions.config().env.redirect_uri
+                    'redirect_uri': functions.config().env.redirect_uri,
+                    'scope': ''
                 },
                 resolveWithFullResponse: true
             });
@@ -338,3 +338,7 @@ exports.addGoogleAuth = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+
+/*
+    Function runs, after 20 seconds return (regardless of where its at)
+*/

@@ -14,6 +14,7 @@
     "pack": "npm run pack:main && npm run pack:renderer",
     "pack:main": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.main.config.js",
     "pack:renderer": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.renderer.config.js",
+    "pack:service": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.service.config.js",
     "postinstall": ""
   },
   "build": {
@@ -63,6 +64,7 @@
     "moment-timezone": "^0.5.28",
     "node-machine-id": "^1.1.12",
     "node-windows": "^1.0.0-beta.1",
+    "pkg": "^4.4.6",
     "querystring": "^0.2.0",
     "uuid": "^7.0.1",
     "vue": "^2.5.16",
@@ -74,7 +76,7 @@
     "vueperslides": "^2.8.3",
     "vuex": "^3.0.1",
     "vuex-electron": "^1.0.0",
-    "wallpaper": "^4.4.1",
+    "wallpaper": "git+https://github.com/Jester565/wallpaper.git",
     "windows-shortcuts": "^0.1.6"
   },
   "devDependencies": {

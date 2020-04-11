@@ -17,6 +17,8 @@ Deploy the cloud functions using the command: `firebase deploy --only functions`
 
 Open the configuration in [{PROJECT ROOT}/web_wallpaper/src/constants.js](./web_wallpaper/src/constants.js) and set the API_URL to your firebase API.
 
+Build the background service using [pkg](https://github.com/zeit/pkg).  First, install the `pkg` command with `npm install -g pkg`.  Next, run `npm run pack:service` in [{PROJECT ROOT}/web_wallpaper](./web_wallpaper).  This will bundle es6 imports in a dist directory.  We still need to build the service executable.  Goto [{PROJECT ROOT}/web_wallpaper/src/service](./web_wallpaper/src/service) and execute `pkg .`.  A `webwallservice.exe` file should now be in the [{PROJECT ROOT}/web_wallpaper/src/service](./web_wallpaper/src/service) directory.
+
 Now that your back end is setup, enter the front end folder at [{PROJECT_ROOT}/web_wallpaper](./web_wallpaper). The front end runs on [electron](https://github.com/electron/electron) and [electron-vue](https://github.com/SimulatedGREG/electron-vue).  Install these and other dependencies by running `npm install` in the front end directory.  To launch the electron app use `npm run dev`
 
 ## Functionality

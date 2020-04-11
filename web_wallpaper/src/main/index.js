@@ -9,7 +9,7 @@ import ws from 'windows-shortcuts'
 import cp from 'child_process'
 import path from 'path'
 import express from 'express'
-import { AUTH_PORT, API_URL } from '../constants'
+import { API_URL } from '../constants'
 __dirname = path.resolve() + "\\src\\main";
 
 const expressApp = express();
@@ -72,6 +72,12 @@ const init = async () => {
       }
       mainWindow.webContents.send('wallpaper-id' , persistentData.wallpaperID);
     }
+    if (!persistentData.machineID) {
+      let macID = await machineId();
+      await Persistent.setData({
+        machineID: macID
+      });
+    }
     if (!persistentData.startUpScriptInstalled) {
       await installStartupScript();
     }
@@ -82,15 +88,18 @@ const init = async () => {
 
 const installStartupScript = async () => {
   let parentDir = __dirname.substr(0, __dirname.lastIndexOf('\\'));
-  let scriptPath = parentDir + "\\service\\index.js";
-  //Create visual basic script to spawn nodejs background process that polls wallpapers
-  let script = `CreateObject("Wscript.Shell").Run "node --experimental-modules ${scriptPath}", 0`;
-  let startUpExPath = parentDir.substr(0, parentDir.lastIndexOf('\\')) + "\\startup\\webwall.vbs";
-  await asyncWriteFile(startUpExPath, script);
-  //Add shortcut to startup folder
-  ws.create("%APPDATA%/Microsoft/Windows/Start Menu/Programs/WebWall.lnk", startUpExPath);
+  let exDir = `${parentDir}\\service`;
+  let startUpExPath = `${exDir}\\webwallservice.exe`;
+  //Create VBS script to run executable on the background, save script to startup directory
+  let launchScriptPath = `${os.homedir()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\webwall.vbs`;
+  await asyncWriteFile(launchScriptPath, `
+  Set WshShell = CreateObject("WScript.Shell") 
+  WshShell.CurrentDirectory = "${exDir}"
+  WshShell.Run chr(34) & "${startUpExPath}" & Chr(34), 0
+  Set WshShell = Nothing`);
+  
   //start background process now
-  cp.spawn("wscript", [startUpExPath]);
+  cp.spawn("wscript", [launchScriptPath]);
   await Persistent.setData({
     startUpScriptInstalled: true
   });

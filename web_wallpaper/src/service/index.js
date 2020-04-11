@@ -36,8 +36,8 @@ const getIDToken = async () => {
     return authData.id_token;
 }
 
-const getWallpaper = async (idToken) => {
-    let machineID = await MachineID.machineId();
+const getWallpaper = async (idToken, machineID) => {
+    //let machineID = await MachineID.machineId();
     let image = await rp({
         method: 'GET',
         url: `${Constants.API_URL}/getWallpaper`,
@@ -52,10 +52,10 @@ const getWallpaper = async (idToken) => {
     return image;
 }
 
-const pullWallpaper = async () => {
+const pullWallpaper = async (machineID) => {
     console.log("PULL WALLPAPER START");
     let idToken = await getIDToken();
-    let imageData = await getWallpaper(idToken);
+    let imageData = await getWallpaper(idToken, machineID);
     await WallpaperSetter.setWallpaper(imageData.id, imageData.url);
     console.log("PULL WALLPAPER COMPLETE");
 }
@@ -83,8 +83,9 @@ const run = async () => {
     let prevRefreshDT = getLastDtAtHour(PULL_HOUR);
     let persistentData = Persistent.getData();
     if (persistentData.wallpaperDate == null || persistentData.wallpaperDate < prevRefreshDT.valueOf()) {
+        console.log("MachineID: ", persistentData.machineID);
         try {
-            await pullWallpaper();
+            await pullWallpaper(persistentData.machineID);
         } catch (err) {
             console.log("PULL WALLPAPER ERR: ", err);
         }
@@ -96,7 +97,7 @@ const run = async () => {
         await sleep(sleepDuration);
         await Persistent.initData();
         try {
-            await pullWallpaper();
+            await pullWallpaper(persistentData.machineID);
         } catch (err) {
             console.log("PULL WALLPAPER ERR: ", err);
         }

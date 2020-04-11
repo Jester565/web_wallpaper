@@ -3,14 +3,20 @@
   "version": "1.0.0",
   "description": "Pulls wallpaper in background",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": "./dist/main.js",
+  "pkg": {
+    "targets": [
+      "host"
+    ]
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "node-machine-id": "^1.1.12",
-    "request-promise": "^4.2.5"
+    "request-promise": "^4.2.5",
+    "wallpaper": "git+https://github.com/Jester565/wallpaper.git"
   }
 }
