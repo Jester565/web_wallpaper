@@ -47,8 +47,8 @@ export default {
         }
     },
     methods: {
-        async onUserUpdated(userData) {
-            this.hasGoogleAuth = (userData.googleAuth != null);
+        async onUserUpdated(userDoc) {
+            this.hasGoogleAuth = (userDoc.data().googleAuth != null);
         },
         async launchLogin() {
             let idToken = await firebase.auth().currentUser.getIdToken();

@@ -27,7 +27,7 @@ new Vue({
       }
     });
     firebase.auth().onAuthStateChanged((user) => {
-      if(user) {
+      if(user && this.$route.path !== '/home') {
         this.$router.push('/home');
       } else if (!this.userHasExisted) {
         this.$router.push('/landing_page')
