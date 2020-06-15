@@ -3,6 +3,7 @@ const _ = require('lodash');
 const vision = require('@google-cloud/vision');
 const SourceTypeGetImgs = require('./sourceTypes/sourceTypes');
 const { getAll } = require('./utils');
+const sharp = require('sharp');
  
 const MIN_CONFIDENCE = 0.6;
 const MIN_FACE_AREA_PERCENT = 0.02;  //must be 100 pixels squared to be counted
@@ -41,8 +42,15 @@ const shouldGetVision = (img, device) => {
 //Get Google Cloud vision annotations for an image with cropping at provided aspectRatios
 const getVisionData = async (img, aspectRatios, visionClient) => {
     let imgData = await img.getData();
+    let imgBuffer =  Buffer.from(imgData, 'base64');
+    let lowQualityImgBuffer = await sharp(imgBuffer)
+    .webp({quality: 60})
+    .toBuffer();
+    let b64buffer = lowQualityImgBuffer.toString('base64');
+    console.log("FIRST: ", b64buffer.substr(0, 50));
+    let lowQualityImgData = `data:image/webp;base64,${b64buffer}`;
     let gPayload = {
-        image: { content: imgData }, 
+        image: { content: b64buffer }, 
         features: [{type: 'TEXT_DETECTION'}, {type: 'CROP_HINTS'}, {type: 'FACE_DETECTION'}],
         imageContext: {
             cropHintsParams: {

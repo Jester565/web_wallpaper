@@ -5,6 +5,8 @@ const { addSourceImages } = require('./addSourceImages');
 const { batchUpdateUsers } = require('./updateUsers');
 const { getReqUserID } = require('./utils');
 const rp = require('request-promise');
+const _ = require('lodash');
+
 admin.initializeApp();
 
 const cors = require('cors')({
